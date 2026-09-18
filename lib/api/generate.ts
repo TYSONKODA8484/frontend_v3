@@ -1,8 +1,19 @@
 import { authedFetch, authedJson, ApiError } from "@/lib/api/authed-fetch";
 import type { BatchResponse, GenerateJob, GenerateResponse, ModelPreset, ToolSchema } from "@/lib/types/generate";
 
-export function getToolSchema(featureType: string) {
-  return authedJson<ToolSchema>(`/tools/${featureType}/schema`);
+// Same schema for every user of a given feature_type — cache in memory per
+// tab so switching between tools repeatedly doesn't re-fetch each time.
+// authedFetch forces cache: "no-store" (correct for personalized data like
+// billing/batches, but this isn't personalized), so this is a manual cache
+// rather than relying on the fetch layer.
+const schemaCache = new Map<string, ToolSchema>();
+
+export async function getToolSchema(featureType: string): Promise<ToolSchema> {
+  const cached = schemaCache.get(featureType);
+  if (cached) return cached;
+  const schema = await authedJson<ToolSchema>(`/tools/${featureType}/schema`);
+  schemaCache.set(featureType, schema);
+  return schema;
 }
 
 export async function generate(formData: FormData): Promise<GenerateResponse> {

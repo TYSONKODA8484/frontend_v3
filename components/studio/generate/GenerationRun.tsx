@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getBatch } from "@/lib/api/generate";
 import type { GenerateJob, JobStatus } from "@/lib/types/generate";
@@ -17,6 +17,16 @@ const STATUS_MESSAGES = [
 ];
 
 const TERMINAL: JobStatus[] = ["completed", "failed"];
+
+// Jobs often finish within a few seconds, so poll tightly at first — then
+// back off, since a generation that's still running after a minute doesn't
+// need sub-2s freshness, and every poll is a request the backend has to
+// serve. Cuts total request volume roughly in half for longer jobs.
+function pollDelay(elapsedMs: number): number {
+  if (elapsedMs < 15_000) return 2000;
+  if (elapsedMs < 60_000) return 4000;
+  return 8000;
+}
 
 export function GenerationRun({
   batchId,
@@ -36,24 +46,31 @@ export function GenerationRun({
   const [jobs, setJobs] = useState<GenerateJob[]>(initialJobs);
   const [polling, setPolling] = useState(true);
   const [messageIndex, setMessageIndex] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const startedAt = Date.now();
+
     function poll() {
       getBatch(batchId)
         .then((res) => {
+          if (cancelled) return;
           setJobs(res.jobs);
           if (res.jobs.every((j) => TERMINAL.includes(j.status))) {
             setPolling(false);
-            if (intervalRef.current) clearInterval(intervalRef.current);
+            return;
           }
+          timeoutId = setTimeout(poll, pollDelay(Date.now() - startedAt));
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!cancelled) timeoutId = setTimeout(poll, pollDelay(Date.now() - startedAt));
+        });
     }
     poll();
-    intervalRef.current = setInterval(poll, 2500);
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [batchId]);
 
