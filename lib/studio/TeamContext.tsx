@@ -3,9 +3,25 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { createTeam as createTeamApi, getMyTeams, renameTeam as renameTeamApi } from "@/lib/api/teams";
+import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { MyTeam } from "@/lib/types/team";
 
 const ACTIVE_TEAM_STORAGE_KEY = "shootpx:active-team-id";
+const TEAMS_CACHE_KEY = "teams";
+
+function readStoredActiveId(): string | null {
+  try {
+    return window.localStorage.getItem(ACTIVE_TEAM_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function pickActiveId(teams: MyTeam[]): string | null {
+  const stored = readStoredActiveId();
+  const stillValid = teams.find((t) => t.id === stored);
+  return stillValid ? stillValid.id : teams[0]?.id ?? null;
+}
 
 type TeamContextValue = {
   teams: MyTeam[];
@@ -22,28 +38,34 @@ const TeamContext = createContext<TeamContextValue | null>(null);
 
 export function TeamProvider({ children }: { children: ReactNode }) {
   const { firebaseUser } = useAuth();
-  const [teams, setTeams] = useState<MyTeam[]>([]);
-  const [activeTeamId, setActiveTeamIdState] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Hydrate straight from last session's cached teams so a reload shows the
+  // team switcher/name immediately instead of a blank state, while the real
+  // fetch below silently revalidates it.
+  const [teams, setTeams] = useState<MyTeam[]>(() => readCache<MyTeam[]>(TEAMS_CACHE_KEY) ?? []);
+  const [activeTeamId, setActiveTeamIdState] = useState<string | null>(() => {
+    const cached = readCache<MyTeam[]>(TEAMS_CACHE_KEY) ?? [];
+    return pickActiveId(cached);
+  });
+  const [loading, setLoading] = useState(() => readCache<MyTeam[]>(TEAMS_CACHE_KEY) == null);
 
   function load() {
     // Only needs a valid Firebase ID token, not the backend profile — fetch
     // as soon as sign-in is known instead of waiting on that extra request.
     if (!firebaseUser) return;
-    setLoading(true);
     getMyTeams()
       .then(({ teams: fetched }) => {
         setTeams(fetched);
-        const stored = window.localStorage.getItem(ACTIVE_TEAM_STORAGE_KEY);
-        const stillValid = fetched.find((t) => t.id === stored);
-        setActiveTeamIdState(stillValid ? stillValid.id : fetched[0]?.id ?? null);
+        writeCache(TEAMS_CACHE_KEY, fetched);
+        setActiveTeamIdState(pickActiveId(fetched));
       })
-      .catch(() => setTeams([]))
+      .catch(() => {
+        // Keep whatever we already have (cache or previous state) rather
+        // than wiping the team switcher just because a refresh failed.
+      })
       .finally(() => setLoading(false));
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching teams once Firebase sign-in state is known
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseUser]);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamUsage } from "@/lib/api/teams";
+import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { TeamUsage, TeamUsagePeriod } from "@/lib/types/team";
 
 const PERIODS: { value: TeamUsagePeriod; label: string }[] = [
@@ -10,11 +11,23 @@ const PERIODS: { value: TeamUsagePeriod; label: string }[] = [
   { value: "month", label: "This month" },
 ];
 
+const DEFAULT_PERIOD: TeamUsagePeriod = "week";
+
+function usageCacheKey(teamId: string, period: TeamUsagePeriod) {
+  return `usage:${teamId}:${period}`;
+}
+
 export function UsageTab() {
   const { activeTeamId, loading: teamsLoading } = useTeam();
-  const [period, setPeriod] = useState<TeamUsagePeriod>("week");
-  const [usage, setUsage] = useState<TeamUsage | null>(null);
-  const [usageLoading, setUsageLoading] = useState(true);
+  const [period, setPeriod] = useState<TeamUsagePeriod>(DEFAULT_PERIOD);
+  // Hydrate from last session's cache for the default period so switching to
+  // this tab shows real numbers immediately instead of a loading state.
+  const [usage, setUsage] = useState<TeamUsage | null>(() =>
+    activeTeamId ? readCache<TeamUsage>(usageCacheKey(activeTeamId, DEFAULT_PERIOD)) : null,
+  );
+  const [usageLoading, setUsageLoading] = useState(
+    () => !(activeTeamId && readCache<TeamUsage>(usageCacheKey(activeTeamId, DEFAULT_PERIOD))),
+  );
 
   function load() {
     if (!activeTeamId) {
@@ -24,10 +37,17 @@ export function UsageTab() {
       setUsageLoading(false);
       return;
     }
-    setUsageLoading(true);
+    const cached = readCache<TeamUsage>(usageCacheKey(activeTeamId, period));
+    if (cached) setUsage(cached);
+    else setUsageLoading(true);
     getTeamUsage(activeTeamId, { period })
-      .then(setUsage)
-      .catch(() => setUsage(null))
+      .then((res) => {
+        setUsage(res);
+        writeCache(usageCacheKey(activeTeamId, period), res);
+      })
+      .catch(() => {
+        // Keep whatever we already have rather than showing "couldn't load".
+      })
       .finally(() => setUsageLoading(false));
   }
 

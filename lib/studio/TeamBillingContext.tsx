@@ -3,9 +3,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamBilling } from "@/lib/api/teams";
+import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { TeamBilling } from "@/lib/types/team";
 
 type BuyTab = "sub" | "credits";
+
+function billingCacheKey(teamId: string) {
+  return `billing:${teamId}`;
+}
 
 type TeamBillingContextValue = {
   billing: TeamBilling | null;
@@ -21,8 +26,16 @@ const TeamBillingContext = createContext<TeamBillingContextValue | null>(null);
 
 export function TeamBillingProvider({ children }: { children: ReactNode }) {
   const { activeTeamId, loading: teamsLoading } = useTeam();
-  const [billing, setBilling] = useState<TeamBilling | null>(null);
-  const [billingLoading, setBillingLoading] = useState(true);
+  // Hydrate from last session's cached billing for whichever team is active
+  // on first render, so the credits pill shows a real number immediately on
+  // reload instead of a loading state — the fetch below silently
+  // revalidates it right after.
+  const [billing, setBilling] = useState<TeamBilling | null>(() =>
+    activeTeamId ? readCache<TeamBilling>(billingCacheKey(activeTeamId)) : null,
+  );
+  const [billingLoading, setBillingLoading] = useState(
+    () => !(activeTeamId && readCache<TeamBilling>(billingCacheKey(activeTeamId))),
+  );
   const [buyModalOpen, setBuyModalOpen] = useState(false);
   const [buyModalTab, setBuyModalTab] = useState<BuyTab>("credits");
 
@@ -35,10 +48,20 @@ export function TeamBillingProvider({ children }: { children: ReactNode }) {
       setBillingLoading(false);
       return;
     }
-    setBillingLoading(true);
+    // Covers switching teams: show that team's own cached billing right
+    // away (if any) rather than the previous team's numbers lingering.
+    const cached = readCache<TeamBilling>(billingCacheKey(activeTeamId));
+    if (cached) setBilling(cached);
+    else setBillingLoading(true);
     getTeamBilling(activeTeamId)
-      .then(setBilling)
-      .catch(() => setBilling(null))
+      .then((res) => {
+        setBilling(res);
+        writeCache(billingCacheKey(activeTeamId), res);
+      })
+      .catch(() => {
+        // Keep whatever we already have (cache or previous state) rather
+        // than zeroing out the credits pill just because a refresh failed.
+      })
       .finally(() => setBillingLoading(false));
   }
 

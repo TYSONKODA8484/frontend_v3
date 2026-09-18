@@ -5,9 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamGenerations } from "@/lib/api/teams";
+import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { Generation } from "@/lib/types/generation";
 
 const RECENT_LIMIT = 8;
+
+function recentCacheKey(teamId: string) {
+  return `recent:${teamId}`;
+}
 
 function titleCaseSlug(slug: string) {
   return slug
@@ -18,8 +23,14 @@ function titleCaseSlug(slug: string) {
 
 export function RecentWork() {
   const { activeTeamId, loading: teamsLoading } = useTeam();
-  const [items, setItems] = useState<Generation[]>([]);
-  const [itemsLoading, setItemsLoading] = useState(true);
+  // Hydrate from last session's cache so a reload shows the previous
+  // thumbnails immediately instead of a loading state.
+  const [items, setItems] = useState<Generation[]>(
+    () => (activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))) || [],
+  );
+  const [itemsLoading, setItemsLoading] = useState(
+    () => !(activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))),
+  );
 
   function load() {
     if (!activeTeamId) {
@@ -29,10 +40,17 @@ export function RecentWork() {
       setItemsLoading(false);
       return;
     }
-    setItemsLoading(true);
+    const cached = readCache<Generation[]>(recentCacheKey(activeTeamId));
+    if (cached) setItems(cached);
+    else setItemsLoading(true);
     getTeamGenerations(activeTeamId, { limit: RECENT_LIMIT })
-      .then((r) => setItems(r.generations))
-      .catch(() => setItems([]))
+      .then((r) => {
+        setItems(r.generations);
+        writeCache(recentCacheKey(activeTeamId), r.generations);
+      })
+      .catch(() => {
+        // Keep whatever we already have rather than blanking the grid out.
+      })
       .finally(() => setItemsLoading(false));
   }
 

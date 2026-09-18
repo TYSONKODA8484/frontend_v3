@@ -4,15 +4,23 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamGenerations } from "@/lib/api/teams";
+import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { Generation, GenerationsPeriod } from "@/lib/types/generation";
 
 const PAGE_SIZE = 24;
+const DEFAULT_PERIOD: GenerationsPeriod = "all_time";
 
 const PERIODS: { value: GenerationsPeriod; label: string }[] = [
   { value: "all_time", label: "All time" },
   { value: "last_7_days", label: "Last 7 days" },
   { value: "last_30_days", label: "Last 30 days" },
 ];
+
+// Only the first page per period is worth caching — pagination beyond that
+// is a deliberate user action, not something a reload should short-circuit.
+function libraryCacheKey(teamId: string, period: GenerationsPeriod) {
+  return `library:${teamId}:${period}`;
+}
 
 function titleCaseSlug(slug: string) {
   return slug
@@ -27,11 +35,17 @@ function formatDate(iso: string) {
 
 export default function StudioLibrary() {
   const { activeTeamId, loading: teamsLoading } = useTeam();
-  const [period, setPeriod] = useState<GenerationsPeriod>("all_time");
-  const [items, setItems] = useState<Generation[]>([]);
+  const [period, setPeriod] = useState<GenerationsPeriod>(DEFAULT_PERIOD);
+  // Hydrate the first page from last session's cache so landing on Library
+  // shows real thumbnails immediately instead of a loading state.
+  const [items, setItems] = useState<Generation[]>(
+    () => (activeTeamId && readCache<Generation[]>(libraryCacheKey(activeTeamId, DEFAULT_PERIOD))) || [],
+  );
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [itemsLoading, setItemsLoading] = useState(true);
+  const [itemsLoading, setItemsLoading] = useState(
+    () => !(activeTeamId && readCache<Generation[]>(libraryCacheKey(activeTeamId, DEFAULT_PERIOD))),
+  );
 
   function load(nextOffset: number, replace: boolean) {
     if (!activeTeamId) {
@@ -41,15 +55,22 @@ export default function StudioLibrary() {
       setItemsLoading(false);
       return;
     }
-    setItemsLoading(true);
+    if (replace) {
+      const cached = readCache<Generation[]>(libraryCacheKey(activeTeamId, period));
+      if (cached) setItems(cached);
+      else setItemsLoading(true);
+    } else {
+      setItemsLoading(true);
+    }
     getTeamGenerations(activeTeamId, { limit: PAGE_SIZE, offset: nextOffset, period })
       .then((r) => {
         setItems((prev) => (replace ? r.generations : [...prev, ...r.generations]));
         setHasMore(r.generations.length === PAGE_SIZE);
         setOffset(nextOffset);
+        if (replace) writeCache(libraryCacheKey(activeTeamId, period), r.generations);
       })
       .catch(() => {
-        if (replace) setItems([]);
+        // Keep whatever we already have rather than blanking the grid out.
       })
       .finally(() => setItemsLoading(false));
   }
