@@ -3,11 +3,16 @@ import type {
   MyTeamsResponse,
   TeamBilling,
   TeamInvitesResponse,
+  TeamMembersResponse,
   TeamRole,
 } from "@/lib/types/team";
 
 export function getMyTeams() {
   return authedJson<MyTeamsResponse>("/teams");
+}
+
+export function getTeamMembers(teamId: string) {
+  return authedJson<TeamMembersResponse>(`/teams/${teamId}/members`);
 }
 
 export function getTeamBilling(teamId: string) {

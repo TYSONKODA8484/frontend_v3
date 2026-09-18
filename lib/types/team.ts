@@ -21,6 +21,21 @@ export type TeamInvitesResponse = {
   invites: TeamInvite[];
 };
 
+export type TeamMember = {
+  userId: string;
+  email: string;
+  name: string;
+  avatarUrl: string | null;
+  role: TeamRole;
+  joinedAt: string;
+};
+
+export type TeamMembersResponse = {
+  id: string;
+  name: string;
+  members: TeamMember[];
+};
+
 export type TeamBilling = {
   totalCredits: number;
   subscriptionCredits: number;

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useToast } from "@/lib/studio/ToastContext";
-import { getTeamInvites, inviteToTeam, cancelInvite } from "@/lib/api/teams";
+import { getTeamMembers, getTeamInvites, inviteToTeam, cancelInvite } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/authed-fetch";
-import type { TeamInvite, TeamRole } from "@/lib/types/team";
+import type { TeamInvite, TeamMember, TeamRole } from "@/lib/types/team";
 
 function friendlyInviteError(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {
@@ -16,10 +16,21 @@ function friendlyInviteError(err: unknown, fallback: string): string {
   return fallback;
 }
 
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function TeamTab() {
   const { teams, activeTeamId, activeTeam, loading: teamsLoading, setActiveTeamId } = useTeam();
   const { say } = useToast();
 
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
   const [invites, setInvites] = useState<TeamInvite[]>([]);
   const [invitesLoading, setInvitesLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -28,6 +39,19 @@ export function TeamTab() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const isOwner = activeTeam?.role === "owner";
+
+  function loadMembers() {
+    if (!activeTeamId) {
+      setMembers([]);
+      setMembersLoading(false);
+      return;
+    }
+    setMembersLoading(true);
+    getTeamMembers(activeTeamId)
+      .then((r) => setMembers(r.members))
+      .catch(() => setMembers([]))
+      .finally(() => setMembersLoading(false));
+  }
 
   function loadInvites() {
     if (!activeTeamId || !isOwner) {
@@ -43,7 +67,8 @@ export function TeamTab() {
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching invites when the active team (or owner status) changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching members/invites when the active team (or owner status) changes
+    loadMembers();
     loadInvites();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId, isOwner]);
@@ -80,6 +105,8 @@ export function TeamTab() {
 
   if (teamsLoading) return <p className="text-sm text-dim">Loading teams…</p>;
 
+  const seatsUsed = members.length + invites.length;
+
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -100,6 +127,37 @@ export function TeamTab() {
               {t.name} ({t.role})
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-4">
+        <label className="font-mono text-[10.5px] tracking-wide text-dim">
+          MEMBERS ({seatsUsed}/5 seats)
+        </label>
+        <div className="mt-3 border border-border">
+          {membersLoading ? (
+            <p className="p-4 text-center text-[13px] text-dim">Loading…</p>
+          ) : members.length === 0 ? (
+            <p className="p-4 text-center text-[13px] text-dim">No members yet.</p>
+          ) : (
+            members.map((m) => (
+              <div
+                key={m.userId}
+                className="flex items-center gap-3.5 border-b border-border px-4 py-3 last:border-b-0"
+              >
+                <span className="flex h-8 w-8 flex-none items-center justify-center border border-border-strong bg-surface-2 text-[11px] font-medium">
+                  {initials(m.name || m.email)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13.5px] font-medium">{m.name || m.email}</div>
+                  <div className="text-xs text-dim">{m.email}</div>
+                </div>
+                <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[10.5px] tracking-wide text-muted">
+                  {m.role}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
