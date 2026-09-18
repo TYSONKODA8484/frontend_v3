@@ -20,23 +20,26 @@ type TeamBillingContextValue = {
 const TeamBillingContext = createContext<TeamBillingContextValue | null>(null);
 
 export function TeamBillingProvider({ children }: { children: ReactNode }) {
-  const { activeTeamId } = useTeam();
+  const { activeTeamId, loading: teamsLoading } = useTeam();
   const [billing, setBilling] = useState<TeamBilling | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [billingLoading, setBillingLoading] = useState(true);
   const [buyModalOpen, setBuyModalOpen] = useState(false);
   const [buyModalTab, setBuyModalTab] = useState<BuyTab>("credits");
 
   function load() {
     if (!activeTeamId) {
+      // Not "no billing to show" — teams may still be loading and
+      // activeTeamId just hasn't arrived yet. Only teamsLoading actually
+      // settling to false (with still no team) would mean that.
       setBilling(null);
-      setLoading(false);
+      setBillingLoading(false);
       return;
     }
-    setLoading(true);
+    setBillingLoading(true);
     getTeamBilling(activeTeamId)
       .then(setBilling)
       .catch(() => setBilling(null))
-      .finally(() => setLoading(false));
+      .finally(() => setBillingLoading(false));
   }
 
   useEffect(() => {
@@ -44,6 +47,12 @@ export function TeamBillingProvider({ children }: { children: ReactNode }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId]);
+
+  // On reload, activeTeamId starts null until GET /teams resolves — during
+  // that window billingLoading alone would read false (nothing to fetch
+  // yet), which rendered as "0 credits" instead of a loading state. Folding
+  // in teamsLoading closes that gap.
+  const loading = teamsLoading || billingLoading;
 
   return (
     <TeamBillingContext.Provider

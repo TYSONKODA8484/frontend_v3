@@ -11,22 +11,24 @@ const PERIODS: { value: TeamUsagePeriod; label: string }[] = [
 ];
 
 export function UsageTab() {
-  const { activeTeamId } = useTeam();
+  const { activeTeamId, loading: teamsLoading } = useTeam();
   const [period, setPeriod] = useState<TeamUsagePeriod>("week");
   const [usage, setUsage] = useState<TeamUsage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [usageLoading, setUsageLoading] = useState(true);
 
   function load() {
     if (!activeTeamId) {
+      // Teams may still be loading and activeTeamId just hasn't arrived
+      // yet — not "nothing to show". Folded into `loading` below.
       setUsage(null);
-      setLoading(false);
+      setUsageLoading(false);
       return;
     }
-    setLoading(true);
+    setUsageLoading(true);
     getTeamUsage(activeTeamId, { period })
       .then(setUsage)
       .catch(() => setUsage(null))
-      .finally(() => setLoading(false));
+      .finally(() => setUsageLoading(false));
   }
 
   useEffect(() => {
@@ -34,6 +36,8 @@ export function UsageTab() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId, period]);
+
+  const loading = teamsLoading || usageLoading;
 
   return (
     <div className="flex flex-col gap-5">

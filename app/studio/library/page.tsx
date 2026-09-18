@@ -26,20 +26,22 @@ function formatDate(iso: string) {
 }
 
 export default function StudioLibrary() {
-  const { activeTeamId } = useTeam();
+  const { activeTeamId, loading: teamsLoading } = useTeam();
   const [period, setPeriod] = useState<GenerationsPeriod>("all_time");
   const [items, setItems] = useState<Generation[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [itemsLoading, setItemsLoading] = useState(true);
 
   function load(nextOffset: number, replace: boolean) {
     if (!activeTeamId) {
+      // Teams may still be loading and activeTeamId just hasn't arrived
+      // yet — not "no projects". Folded into `loading` below.
       setItems([]);
-      setLoading(false);
+      setItemsLoading(false);
       return;
     }
-    setLoading(true);
+    setItemsLoading(true);
     getTeamGenerations(activeTeamId, { limit: PAGE_SIZE, offset: nextOffset, period })
       .then((r) => {
         setItems((prev) => (replace ? r.generations : [...prev, ...r.generations]));
@@ -49,7 +51,7 @@ export default function StudioLibrary() {
       .catch(() => {
         if (replace) setItems([]);
       })
-      .finally(() => setLoading(false));
+      .finally(() => setItemsLoading(false));
   }
 
   useEffect(() => {
@@ -57,6 +59,8 @@ export default function StudioLibrary() {
     load(0, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId, period]);
+
+  const loading = teamsLoading || itemsLoading;
 
   return (
     <div className="flex flex-col gap-5 px-11 py-8">

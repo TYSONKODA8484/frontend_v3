@@ -17,21 +17,23 @@ function titleCaseSlug(slug: string) {
 }
 
 export function RecentWork() {
-  const { activeTeamId } = useTeam();
+  const { activeTeamId, loading: teamsLoading } = useTeam();
   const [items, setItems] = useState<Generation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [itemsLoading, setItemsLoading] = useState(true);
 
   function load() {
     if (!activeTeamId) {
+      // Teams may still be loading and activeTeamId just hasn't arrived
+      // yet — not "no projects". Folded into `loading` below.
       setItems([]);
-      setLoading(false);
+      setItemsLoading(false);
       return;
     }
-    setLoading(true);
+    setItemsLoading(true);
     getTeamGenerations(activeTeamId, { limit: RECENT_LIMIT })
       .then((r) => setItems(r.generations))
       .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+      .finally(() => setItemsLoading(false));
   }
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export function RecentWork() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId]);
+
+  const loading = teamsLoading || itemsLoading;
 
   return (
     <div className="flex flex-col gap-2.5 px-11 py-7">
