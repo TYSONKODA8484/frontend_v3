@@ -7,7 +7,7 @@ import { ParamFieldInput } from "./ParamFieldInput";
 import { OutputCountField } from "./OutputCountField";
 import { CreditCostBadge } from "./CreditCostBadge";
 import type { ToolSchema } from "@/lib/types/generate";
-import { estimateCreditsPerImage } from "@/lib/tools/credit-estimate";
+import { estimateCreditsPerImage, hasNoCostVaryingFields } from "@/lib/tools/credit-estimate";
 import { useToast } from "@/lib/studio/ToastContext";
 
 export function ToolForm({
@@ -46,6 +46,7 @@ export function ToolForm({
   const [error, setError] = useState("");
 
   const perImageCost = estimateCreditsPerImage(schema.featureType, schema, values);
+  const fixedCost = hasNoCostVaryingFields(schema.featureType, schema);
   const needsImages = schema.maxInputImages > 0;
 
   function setValue(name: string, v: string) {
@@ -129,7 +130,7 @@ export function ToolForm({
         >
           {submitting ? "Starting…" : "Generate"}
         </button>
-        <CreditCostBadge perImage={perImageCost} count={outputCount} />
+        <CreditCostBadge perImage={perImageCost} count={outputCount} fixedCost={fixedCost} />
       </div>
     </div>
   );

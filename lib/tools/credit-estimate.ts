@@ -3,8 +3,8 @@ import { optionCreditCost, optionValue } from "@/lib/types/generate";
 
 // creative_photoshoot and listing_photoshoot share this fixed multiplier
 // table — neither has it in their schema, confirmed directly by the backend
-// team (app/tools/creative_photoshoot.py; listing_photoshoot uses the same
-// tables per-shot before multiplying by output_count).
+// team. listing_photoshoot applies it per-shot, then the caller multiplies
+// by output_count for the batch total (e.g. max × 4k × 8 shots = 768).
 const QUALITY_RESOLUTION_MULTIPLIER_TOOLS = new Set(["creative_photoshoot", "listing_photoshoot"]);
 const QUALITY_MULTIPLIER: Record<string, number> = {
   low: 1,
@@ -45,4 +45,15 @@ export function estimateCreditsPerImage(
     }
   }
   return null;
+}
+
+/** True if this tool has no field that could ever change its per-image cost
+ * (e.g. model_shoot_generate_model, which is hardcoded low-quality server-side) —
+ * lets the UI show "fixed cost, shown after generation" instead of implying
+ * there's a selection above that affects price. */
+export function hasNoCostVaryingFields(featureType: string, schema: ToolSchema): boolean {
+  if (QUALITY_RESOLUTION_MULTIPLIER_TOOLS.has(featureType)) return false;
+  return !schema.paramSchema.some(
+    (f) => f.type === "select" && f.options?.some((o) => optionCreditCost(o) != null),
+  );
 }

@@ -106,6 +106,7 @@ export default function ToolGeneratePage() {
             grantedCount={run.grantedCount}
             requestedCount={run.requestedCount}
             partial={run.partial}
+            featureType={schema.featureType}
           />
         ) : (
           <EmptyResults />

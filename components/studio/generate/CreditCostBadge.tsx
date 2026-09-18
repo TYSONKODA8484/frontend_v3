@@ -3,12 +3,20 @@ import { CircleDollarSign } from "lucide-react";
 export function CreditCostBadge({
   perImage,
   count,
+  fixedCost,
 }: {
   perImage: number | null;
   count: number;
+  fixedCost?: boolean;
 }) {
   if (perImage == null) {
-    return <span className="text-[12.5px] text-dim">Credit cost depends on your selections above.</span>;
+    return (
+      <span className="text-[12.5px] text-dim">
+        {fixedCost
+          ? "Credit cost is fixed for this tool — shown after generation."
+          : "Credit cost depends on your selections above."}
+      </span>
+    );
   }
 
   const total = perImage * count;

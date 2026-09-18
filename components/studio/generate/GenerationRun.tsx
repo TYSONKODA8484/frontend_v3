@@ -23,12 +23,14 @@ export function GenerationRun({
   grantedCount,
   requestedCount,
   partial,
+  featureType,
 }: {
   batchId: string;
   initialJobs: { jobId: string; status: JobStatus }[];
   grantedCount: number;
   requestedCount: number;
   partial: boolean;
+  featureType?: string;
 }) {
   const [jobs, setJobs] = useState<GenerateJob[]>(initialJobs);
   const [polling, setPolling] = useState(true);
@@ -93,7 +95,7 @@ export function GenerationRun({
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {jobs.map((j) => (
+        {jobs.map((j, i) => (
           <div key={j.jobId} className="relative aspect-square overflow-hidden border border-border bg-surface">
             {j.status === "completed" && j.outputUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- remote job output, dimensions unknown ahead of time
@@ -102,6 +104,14 @@ export function GenerationRun({
               <div className="flex h-full items-center justify-center p-3 text-center text-xs text-dim">
                 {j.status === "failed" ? j.errorMessage || "Generation failed" : "Pending"}
               </div>
+            )}
+            {/* Batch order matches shot order, but the planner's internal
+                front/side/detail labels aren't exposed by /batches — number
+                only, rather than fabricating a shot type. */}
+            {featureType === "listing_photoshoot" && (
+              <span className="absolute left-1.5 top-1.5 bg-bg/80 px-1.5 py-0.5 font-mono text-[10px] text-muted">
+                Shot {i + 1}
+              </span>
             )}
           </div>
         ))}
