@@ -37,7 +37,7 @@ export function Navbar() {
   const router = useRouter();
   const { profile } = useAuth();
   const { activeTeam } = useTeam();
-  const { billing, openBuyModal } = useTeamBilling();
+  const { billing, loading: billingLoading, openBuyModal } = useTeamBilling();
 
   const label = profile?.name || profile?.email || "Account";
   const { title, toolBreadcrumb } = section(pathname);
@@ -61,7 +61,7 @@ export function Navbar() {
           className="flex items-center gap-1.5 whitespace-nowrap border border-border-strong px-3.5 py-1.5 font-mono text-xs text-accent hover:border-accent"
         >
           <CircleDollarSign size={15} className="flex-none" />
-          {billing?.totalCredits ?? 0} credits
+          {billingLoading ? "…" : `${billing?.totalCredits ?? 0} credits`}
         </button>
         <button
           onClick={() => router.push("/studio/settings")}

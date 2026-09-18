@@ -12,14 +12,18 @@ import { Toast } from "@/components/studio/Toast";
 import { BuyCreditsModal } from "@/components/studio/BuyCreditsModal";
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
-  const { profile, loading } = useAuth();
+  const { firebaseUser, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !profile) router.replace("/auth");
-  }, [loading, profile, router]);
+    if (!loading && !firebaseUser) router.replace("/auth");
+  }, [loading, firebaseUser, router]);
 
-  if (loading || !profile) {
+  // Only gates on Firebase resolving sign-in state, not on the backend
+  // profile fetch — the shell (and its team/billing fetches) can start as
+  // soon as we know the visitor is signed in, instead of waiting on an
+  // extra serial round trip to /me first.
+  if (loading || !firebaseUser) {
     return <div className="flex min-h-screen items-center justify-center text-sm text-dim">Loading…</div>;
   }
 

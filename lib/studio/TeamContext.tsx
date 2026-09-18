@@ -19,13 +19,15 @@ type TeamContextValue = {
 const TeamContext = createContext<TeamContextValue | null>(null);
 
 export function TeamProvider({ children }: { children: ReactNode }) {
-  const { profile } = useAuth();
+  const { firebaseUser } = useAuth();
   const [teams, setTeams] = useState<MyTeam[]>([]);
   const [activeTeamId, setActiveTeamIdState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   function load() {
-    if (!profile) return;
+    // Only needs a valid Firebase ID token, not the backend profile — fetch
+    // as soon as sign-in is known instead of waiting on that extra request.
+    if (!firebaseUser) return;
     setLoading(true);
     getMyTeams()
       .then(({ teams: fetched }) => {
@@ -39,10 +41,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching teams once the signed-in profile is available
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching teams once Firebase sign-in state is known
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile]);
+  }, [firebaseUser]);
 
   function setActiveTeamId(id: string) {
     setActiveTeamIdState(id);

@@ -22,20 +22,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // `loading` tracks only Firebase resolving sign-in state — it does not
+    // wait on the backend profile fetch below, so consumers that only need
+    // to know "signed in or not" (route guards, team/billing fetches that
+    // only need a valid ID token) aren't stuck behind an extra round trip.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
+      setLoading(false);
       if (!user) {
         setProfile(null);
-        setLoading(false);
         return;
       }
-      try {
-        const idToken = await user.getIdToken();
-        setProfile(await getMe(idToken));
-      } catch {
-        setProfile(null);
-      }
-      setLoading(false);
+      user
+        .getIdToken()
+        .then(getMe)
+        .then(setProfile)
+        .catch(() => setProfile(null));
     });
     return unsubscribe;
   }, []);
