@@ -23,14 +23,12 @@ export function GenerationRun({
   grantedCount,
   requestedCount,
   partial,
-  onReset,
 }: {
   batchId: string;
   initialJobs: { jobId: string; status: JobStatus }[];
   grantedCount: number;
   requestedCount: number;
   partial: boolean;
-  onReset: () => void;
 }) {
   const [jobs, setJobs] = useState<GenerateJob[]>(initialJobs);
   const [polling, setPolling] = useState(true);
@@ -68,7 +66,7 @@ export function GenerationRun({
 
   if (polling) {
     return (
-      <div className="flex flex-col items-center gap-4 py-14 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
         <LottieIcon animation={loading} size={72} />
         <p className="text-[14px] text-muted">{STATUS_MESSAGES[messageIndex]}</p>
         <p className="text-xs text-dim">
@@ -79,7 +77,7 @@ export function GenerationRun({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 p-6">
       {partial && (
         <p className="border border-accent p-3 text-[13px] text-accent">
           Generated {grantedCount} of {requestedCount} — not enough credits for the rest.
@@ -108,13 +106,6 @@ export function GenerationRun({
           </div>
         ))}
       </div>
-
-      <button
-        onClick={onReset}
-        className="rounded-full border border-border-strong py-3 text-sm font-medium hover:border-accent"
-      >
-        Generate again
-      </button>
     </div>
   );
 }

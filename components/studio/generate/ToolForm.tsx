@@ -71,32 +71,42 @@ export function ToolForm({
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      {needsImages && (
-        <ImageDropzone files={images} onChange={setImages} maxFiles={schema.maxInputImages} />
-      )}
+    <div className="flex h-full w-[380px] flex-none flex-col border-r border-border">
+      <div className="flex-1 overflow-auto px-6 py-6">
+        {needsImages && (
+          <div className="mb-6">
+            <h2 className="font-heading text-lg font-semibold tracking-tight">Upload photos</h2>
+            <div className="mt-3">
+              <ImageDropzone files={images} onChange={setImages} maxFiles={schema.maxInputImages} />
+            </div>
+          </div>
+        )}
 
-      {otherFields.map((field) => (
-        <ParamFieldInput
-          key={field.name}
-          field={field}
-          value={values[field.name] ?? ""}
-          onChange={(v) => setValue(field.name, v)}
-        />
-      ))}
+        <div className="flex flex-col gap-3">
+          <span className="font-mono text-[11px] tracking-wide text-dim">SETTINGS</span>
+          {otherFields.map((field) => (
+            <ParamFieldInput
+              key={field.name}
+              field={field}
+              value={values[field.name] ?? ""}
+              onChange={(v) => setValue(field.name, v)}
+            />
+          ))}
+          <OutputCountField value={outputCount} onChange={setOutputCount} max={outputMax} />
+        </div>
+      </div>
 
-      <OutputCountField value={outputCount} onChange={setOutputCount} max={outputMax} />
-      <CreditCostBadge perImage={perImageCost} count={outputCount} />
-
-      {error && <p className="text-sm text-[#ff8a6b]">{error}</p>}
-
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="rounded-full bg-accent py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
-      >
-        {submitting ? "Starting…" : "Generate"}
-      </button>
+      <div className="flex-none border-t border-border px-6 py-4 flex flex-col gap-2.5">
+        {error && <p className="text-sm text-[#ff8a6b]">{error}</p>}
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="rounded-full bg-accent py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
+        >
+          {submitting ? "Starting…" : "Generate"}
+        </button>
+        <CreditCostBadge perImage={perImageCost} count={outputCount} />
+      </div>
     </div>
   );
 }

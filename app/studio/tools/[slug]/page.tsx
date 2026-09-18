@@ -9,6 +9,7 @@ import { useTeam } from "@/lib/studio/TeamContext";
 import { useToast } from "@/lib/studio/ToastContext";
 import { ToolForm } from "@/components/studio/generate/ToolForm";
 import { GenerationRun } from "@/components/studio/generate/GenerationRun";
+import { EmptyResults } from "@/components/studio/generate/EmptyResults";
 import type { GenerateResponse, ToolSchema } from "@/lib/types/generate";
 
 // model_shoot uses grouped image fields (model_image/top_images/etc), not the
@@ -76,7 +77,7 @@ export default function ToolGeneratePage() {
 
   if (schemaLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-dim">
+      <div className="flex h-full items-center justify-center text-dim">
         <Loader2 className="animate-spin" size={24} />
       </div>
     );
@@ -84,7 +85,7 @@ export default function ToolGeneratePage() {
 
   if (schemaError || !schema || UNSUPPORTED_FEATURE_TYPES.has(schema.featureType)) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 px-11 text-center text-dim">
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-11 text-center text-dim">
         <span className="text-3xl opacity-50">▢</span>
         <span className="text-[15px] font-semibold text-muted">
           {schemaError || "This tool's flow isn't built yet."}
@@ -94,22 +95,22 @@ export default function ToolGeneratePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-8 py-8">
-      <h1 className="mb-6 font-heading text-2xl font-semibold capitalize tracking-tight">
-        {schema.featureType.replace(/_/g, " ")}
-      </h1>
-      {run ? (
-        <GenerationRun
-          batchId={run.batchId}
-          initialJobs={run.jobs}
-          grantedCount={run.grantedCount}
-          requestedCount={run.requestedCount}
-          partial={run.partial}
-          onReset={() => setRun(null)}
-        />
-      ) : (
-        <ToolForm schema={schema} onSubmit={handleSubmit} submitting={submitting} />
-      )}
+    <div className="flex h-full">
+      <ToolForm schema={schema} onSubmit={handleSubmit} submitting={submitting} />
+      <div className="flex-1 overflow-auto">
+        {run ? (
+          <GenerationRun
+            key={run.batchId}
+            batchId={run.batchId}
+            initialJobs={run.jobs}
+            grantedCount={run.grantedCount}
+            requestedCount={run.requestedCount}
+            partial={run.partial}
+          />
+        ) : (
+          <EmptyResults />
+        )}
+      </div>
     </div>
   );
 }

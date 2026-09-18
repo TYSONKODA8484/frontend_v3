@@ -1,16 +1,26 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CircleDollarSign } from "lucide-react";
+import { CircleDollarSign, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
 
-function sectionTitle(pathname: string) {
-  if (pathname.startsWith("/studio/tools")) return "Tools";
-  if (pathname.startsWith("/studio/library")) return "Library";
-  if (pathname.startsWith("/studio/settings")) return "Settings";
-  return "Home";
+function titleCaseSlug(slug: string) {
+  return slug
+    .split("_")
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function section(pathname: string): { title: string; toolBreadcrumb: boolean } {
+  const toolMatch = pathname.match(/^\/studio\/tools\/(.+)$/);
+  if (toolMatch) return { title: titleCaseSlug(toolMatch[1]), toolBreadcrumb: true };
+  if (pathname.startsWith("/studio/tools")) return { title: "Tools", toolBreadcrumb: false };
+  if (pathname.startsWith("/studio/library")) return { title: "Library", toolBreadcrumb: false };
+  if (pathname.startsWith("/studio/settings")) return { title: "Settings", toolBreadcrumb: false };
+  return { title: "Home", toolBreadcrumb: false };
 }
 
 function initials(name: string) {
@@ -30,12 +40,20 @@ export function Navbar() {
   const { billing, openBuyModal } = useTeamBilling();
 
   const label = profile?.name || profile?.email || "Account";
+  const { title, toolBreadcrumb } = section(pathname);
 
   return (
     <div className="flex h-[58px] flex-none items-center gap-4 border-b border-border bg-bg px-6">
-      <span className="font-heading text-base font-semibold tracking-tight">
-        {sectionTitle(pathname)}
-      </span>
+      {toolBreadcrumb && (
+        <Link
+          href="/studio/tools"
+          className="flex items-center gap-1.5 text-[13px] text-muted hover:text-text"
+        >
+          <ChevronLeft size={14} />
+          Tools
+        </Link>
+      )}
+      <span className="font-heading text-base font-semibold tracking-tight">{title}</span>
 
       <div className="ml-auto flex items-center gap-4">
         <button
