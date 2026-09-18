@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { getMyTeams } from "@/lib/api/teams";
+import { getMyTeams, renameTeam as renameTeamApi } from "@/lib/api/teams";
 import type { MyTeam } from "@/lib/types/team";
 
 const ACTIVE_TEAM_STORAGE_KEY = "shootpx:active-team-id";
@@ -14,6 +14,7 @@ type TeamContextValue = {
   loading: boolean;
   setActiveTeamId: (id: string) => void;
   refetchTeams: () => void;
+  renameTeam: (id: string, name: string) => Promise<void>;
 };
 
 const TeamContext = createContext<TeamContextValue | null>(null);
@@ -57,9 +58,14 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
   const activeTeam = teams.find((t) => t.id === activeTeamId) ?? null;
 
+  async function renameTeam(id: string, name: string) {
+    const res = await renameTeamApi(id, name);
+    setTeams((prev) => prev.map((t) => (t.id === id ? { ...t, name: res.name } : t)));
+  }
+
   return (
     <TeamContext.Provider
-      value={{ teams, activeTeamId, activeTeam, loading, setActiveTeamId, refetchTeams: load }}
+      value={{ teams, activeTeamId, activeTeam, loading, setActiveTeamId, refetchTeams: load, renameTeam }}
     >
       {children}
     </TeamContext.Provider>

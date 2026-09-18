@@ -14,6 +14,14 @@ export function getMyTeams() {
   return authedJson<MyTeamsResponse>("/teams");
 }
 
+export function renameTeam(teamId: string, name: string) {
+  return authedJson<{ id: string; name: string }>(`/teams/${teamId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+}
+
 export function getTeamMembers(teamId: string) {
   return authedJson<TeamMembersResponse>(`/teams/${teamId}/members`);
 }

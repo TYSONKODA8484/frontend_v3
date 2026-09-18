@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useToast } from "@/lib/studio/ToastContext";
 import { getTeamMembers, getTeamInvites, inviteToTeam, cancelInvite } from "@/lib/api/teams";
@@ -16,6 +16,14 @@ function friendlyInviteError(err: unknown, fallback: string): string {
   return fallback;
 }
 
+function friendlyRenameError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 400) return "Team name can't be empty.";
+    if (err.status === 403) return "Only the team owner can rename this team.";
+  }
+  return "Couldn't rename the team.";
+}
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -26,7 +34,7 @@ function initials(name: string) {
 }
 
 export function TeamTab() {
-  const { teams, activeTeamId, activeTeam, loading: teamsLoading, setActiveTeamId } = useTeam();
+  const { teams, activeTeamId, activeTeam, loading: teamsLoading, setActiveTeamId, renameTeam } = useTeam();
   const { say } = useToast();
 
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -37,8 +45,25 @@ export function TeamTab() {
   const [inviteRole, setInviteRole] = useState<InviteRole>("editor");
   const [inviting, setInviting] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const isOwner = activeTeam?.role === "owner";
+
+  async function handleRename() {
+    if (!activeTeamId || !nameInputRef.current) return;
+    const name = nameInputRef.current.value.trim();
+    if (!name) return say("Team name can't be empty.");
+    setRenaming(true);
+    try {
+      await renameTeam(activeTeamId, name);
+      say("Team renamed");
+    } catch (err) {
+      say(friendlyRenameError(err));
+    } finally {
+      setRenaming(false);
+    }
+  }
 
   function loadMembers() {
     if (!activeTeamId) {
@@ -129,6 +154,29 @@ export function TeamTab() {
           ))}
         </div>
       </div>
+
+      {isOwner && (
+        <div className="border-t border-border pt-4">
+          <label className="font-mono text-[10.5px] tracking-wide text-dim">TEAM NAME</label>
+          <div className="mt-2.5 flex gap-2.5">
+            <div className="flex-1 border border-border bg-surface px-3.5 py-2.5">
+              <input
+                key={activeTeamId}
+                ref={nameInputRef}
+                defaultValue={activeTeam?.name}
+                className="w-full text-[13.5px]"
+              />
+            </div>
+            <button
+              onClick={handleRename}
+              disabled={renaming}
+              className="whitespace-nowrap rounded-full border border-border-strong px-5 py-2.5 text-[13.5px] font-medium hover:border-accent disabled:opacity-60"
+            >
+              {renaming ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="border-t border-border pt-4">
         <label className="font-mono text-[10.5px] tracking-wide text-dim">
