@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Sparkles } from "lucide-react";
 import { ImageDropzone } from "./ImageDropzone";
 import { ParamFieldInput } from "./ParamFieldInput";
 import { OutputCountField } from "./OutputCountField";
 import { CreditCostBadge } from "./CreditCostBadge";
 import type { ToolSchema } from "@/lib/types/generate";
 import { estimateCreditsPerImage } from "@/lib/tools/credit-estimate";
+import { useToast } from "@/lib/studio/ToastContext";
 
 export function ToolForm({
   schema,
@@ -17,11 +19,19 @@ export function ToolForm({
   onSubmit: (formData: FormData) => void;
   submitting: boolean;
 }) {
+  const { say } = useToast();
+
   // output_count is always sent as its own dedicated form field — when the
   // schema declares it (as a "number" field, e.g. listing_photoshoot), its
   // min/max/default drive the stepper; otherwise fall back to a sensible default.
   const outputCountField = schema.paramSchema.find((f) => f.name === "output_count");
-  const otherFields = schema.paramSchema.filter((f) => f.name !== "output_count");
+  // Selects/color/number settle first, free-text prompt fields last — matches
+  // the reference layout (Quality/Size rows above, Prompt textarea at the
+  // bottom), rather than whatever order the schema happens to declare fields in.
+  const otherFields = schema.paramSchema
+    .filter((f) => f.name !== "output_count")
+    .slice()
+    .sort((a, b) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0));
   const outputMax = outputCountField?.max ?? 8;
 
   const [images, setImages] = useState<File[]>([]);
@@ -85,12 +95,26 @@ export function ToolForm({
         <div className="flex flex-col gap-3">
           <span className="font-mono text-[11px] tracking-wide text-dim">SETTINGS</span>
           {otherFields.map((field) => (
-            <ParamFieldInput
-              key={field.name}
-              field={field}
-              value={values[field.name] ?? ""}
-              onChange={(v) => setValue(field.name, v)}
-            />
+            <div key={field.name} className="flex flex-col gap-2">
+              <ParamFieldInput
+                field={field}
+                value={values[field.name] ?? ""}
+                onChange={(v) => setValue(field.name, v)}
+              />
+              {/* Enhance is a real, upcoming tool (enhance_prompt) — shown here
+                  to match the reference, but inert until that tool is built,
+                  rather than faking an AI call. */}
+              {field.name === "prompt" && schema.featureType === "creative_photoshoot" && (
+                <button
+                  onClick={() => say("Prompt enhancement is coming soon")}
+                  className="flex items-center gap-1.5 self-start text-xs text-accent hover:text-accent-hover"
+                >
+                  <Sparkles size={13} />
+                  Enhance prompt
+                  <span className="text-dim">· Coming soon</span>
+                </button>
+              )}
+            </div>
           ))}
           <OutputCountField value={outputCount} onChange={setOutputCount} max={outputMax} />
         </div>
