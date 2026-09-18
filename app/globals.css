@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #000000;
+  --color-bg-alt: #080a09;
+  --color-surface: #111512;
+  --color-surface-2: #181d19;
+  --color-border: #242a25;
+  --color-border-strong: #363d38;
+  --color-text: #ffffff;
+  --color-muted: #c3c8c4;
+  --color-dim: #7b827d;
+  --color-accent: #c8ff00;
+  --color-accent-hover: #d9ff3d;
+  --color-accent-ink: #0b0f04;
+  --color-accent-dim: #8fb400;
+
+  --font-heading: var(--font-outfit), sans-serif;
+  --font-body: var(--font-dm-sans), Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-marquee {
+  animation: marquee 26s linear infinite;
+}
+
+.animate-glow {
+  animation: glow 7s ease-in-out infinite;
+}
+
+.animate-blink {
+  animation: blink 1.8s ease-in-out infinite;
+}
+
+.animate-drop {
+  animation: drop 0.16s ease both;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #242a25;
+  border-radius: 8px;
+  border: 2px solid #000000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #363d38;
+}
+
+html {
+  scrollbar-color: #242a25 #000000;
+  scrollbar-width: thin;
+}
