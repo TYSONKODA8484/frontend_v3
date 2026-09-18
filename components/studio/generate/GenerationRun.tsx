@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { getBatch } from "@/lib/api/generate";
 import type { GenerateJob, JobStatus } from "@/lib/types/generate";
 import { LottieIcon } from "@/components/ui/LottieIcon";
@@ -98,8 +99,13 @@ export function GenerationRun({
         {jobs.map((j, i) => (
           <div key={j.jobId} className="relative aspect-square overflow-hidden border border-border bg-surface">
             {j.status === "completed" && j.outputUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- remote job output, dimensions unknown ahead of time
-              <img src={j.outputUrl} alt="" className="h-full w-full object-cover" />
+              <Image
+                src={j.outputUrl}
+                alt=""
+                fill
+                sizes="(min-width: 640px) 25vw, 50vw"
+                className="object-cover"
+              />
             ) : (
               <div className="flex h-full items-center justify-center p-3 text-center text-xs text-dim">
                 {j.status === "failed" ? j.errorMessage || "Generation failed" : "Pending"}
