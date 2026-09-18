@@ -1,6 +1,7 @@
 import { Outfit, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { siteMetadata } from "@/lib/seo/metadata";
 import { buildJsonLd } from "@/lib/seo/json-ld";
+import { AuthProvider } from "@/lib/auth/AuthContext";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -32,7 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd()) }}
         />
       </head>
-      <body className="bg-bg text-text">{children}</body>
+      <body className="bg-bg text-text">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

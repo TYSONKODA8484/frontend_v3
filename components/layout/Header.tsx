@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { navItems } from "./Header.nav-items";
+import { HeaderAuthArea } from "./Header.AuthArea";
 
 export function Header() {
   const [openNav, setOpenNav] = useState<string | null>(null);
@@ -99,12 +100,7 @@ export function Header() {
           >
             BOOK DEMO
           </Link>
-          <Link
-            href="/auth"
-            className="whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink hover:bg-accent-hover"
-          >
-            Get started
-          </Link>
+          <HeaderAuthArea />
         </div>
       </div>
     </header>
