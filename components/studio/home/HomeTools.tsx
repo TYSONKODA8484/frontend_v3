@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Tool } from "@/lib/types/tool";
 import { iconForTool } from "@/lib/tools/icon-map";
+import { resolveFeatureType } from "@/lib/tools/slug-to-feature-type";
 
 export function HomeTools({ tools }: { tools: Tool[] }) {
   const categories = useMemo(() => {
@@ -57,7 +58,7 @@ export function HomeTools({ tools }: { tools: Tool[] }) {
             return (
               <Link
                 key={t.id}
-                href={`/studio/tools/${t.slug}`}
+                href={`/studio/tools/${resolveFeatureType(t.slug)}`}
                 className="flex flex-col gap-1.5 bg-bg px-4 py-3.5 hover:bg-surface"
               >
                 <Icon size={18} className="text-muted" />
