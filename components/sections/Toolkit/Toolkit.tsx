@@ -1,68 +1,9 @@
-import {
-  Camera,
-  ImageIcon,
-  Shirt,
-  UserRound,
-  Eraser,
-  Brush,
-  Sun,
-  Maximize,
-  Crop,
-  LayoutGrid,
-  Layers,
-  Palette,
-  Folder,
-  Clapperboard,
-  Wand2,
-  Sparkles,
-} from "lucide-react";
-import type { Tool } from "@/lib/types";
-
-const ICON_BY_KEYWORD: [string, React.ComponentType<{ size?: number; className?: string }>][] = [
-  ["photoshoot", Camera],
-  ["background", ImageIcon],
-  ["mockup", Shirt],
-  ["model", UserRound],
-  ["erase", Eraser],
-  ["inpaint", Brush],
-  ["relight", Sun],
-  ["upscale", Maximize],
-  ["resize", Crop],
-  ["outpaint", Crop],
-  ["angle", LayoutGrid],
-  ["flat lay", LayoutGrid],
-  ["motion", Clapperboard],
-  ["effect", Wand2],
-  ["ugc", Clapperboard],
-  ["avatar", UserRound],
-  ["batch", Layers],
-  ["brand", Palette],
-  ["library", Folder],
-];
-
-function iconFor(tool: Tool) {
-  const haystack = `${tool.name} ${tool.category}`.toLowerCase();
-  const match = ICON_BY_KEYWORD.find(([keyword]) => haystack.includes(keyword));
-  return match ? match[1] : Sparkles;
-}
-
-function titleCase(value: string) {
-  return value
-    .split(/[\s_-]+/)
-    .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))
-    .join(" ");
-}
+import type { Tool } from "@/lib/types/tool";
+import { iconForTool } from "./icon-map";
+import { groupToolsByCategory, titleCase } from "./group-by-category";
 
 export function Toolkit({ tools }: { tools: Tool[] }) {
-  const groups = new Map<string, Tool[]>();
-  for (const tool of tools) {
-    const key = tool.category || "More";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(tool);
-  }
-  for (const list of groups.values()) {
-    list.sort((a, b) => a.sortOrder - b.sortOrder);
-  }
+  const groups = groupToolsByCategory(tools);
 
   return (
     <section id="tools" aria-label="All tools" className="border-t border-border bg-bg-alt">
@@ -91,7 +32,7 @@ export function Toolkit({ tools }: { tools: Tool[] }) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {groupTools.map((t) => {
-                    const Icon = iconFor(t);
+                    const Icon = iconForTool(t);
                     const soon = t.status !== "live";
                     return (
                       <div

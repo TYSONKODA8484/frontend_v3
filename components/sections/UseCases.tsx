@@ -1,22 +1,5 @@
 import { Check } from "lucide-react";
-
-const AUDIENCES = [
-  {
-    title: "Solo e-commerce sellers",
-    desc: "You shoot on a phone at the kitchen table. ShootPX gets you a listing-quality image before your coffee cools.",
-    wins: ["Mobile-friendly, no learning curve", "Marketplace presets built in", "Free tier to start"],
-  },
-  {
-    title: "DTC brand marketers",
-    desc: "On-brand lifestyle imagery and UGC ads for paid social, with a shared brand kit injected into every prompt.",
-    wins: ["Brand kit drives scene colour and type", "Batch variants for creative testing", "Commercial licence from Pro"],
-  },
-  {
-    title: "Catalog & ops teams",
-    desc: "Hundreds of SKUs, one consistent look. Import a folder, apply a preset, review and ship.",
-    wins: ["250 products per batch job", "Per-image overrides preserved", "CSV manifests for handoff"],
-  },
-];
+import { audiences } from "./UseCases.content";
 
 export function UseCases() {
   return (
@@ -29,7 +12,7 @@ export function UseCases() {
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {AUDIENCES.map((a) => (
+          {audiences.map((a) => (
             <div
               key={a.title}
               className="flex flex-col gap-3.5 rounded-2xl border border-border bg-surface p-7"

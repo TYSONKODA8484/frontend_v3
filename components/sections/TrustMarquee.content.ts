@@ -1,0 +1,11 @@
+export const marqueeItems = [
+  "BACKGROUND REMOVAL",
+  "AI SCENE GENERATION",
+  "PRODUCT MOTION",
+  "UGC AVATAR ADS",
+  "MOCKUP STUDIO",
+  "ON-MODEL SHOTS",
+  "BATCH OF 250",
+  "UPSCALE 4K",
+  "BRAND KIT",
+];

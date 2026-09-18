@@ -1,4 +1,4 @@
-import { PlaceholderSlot } from "./PlaceholderSlot";
+import { PlaceholderSlot } from "@/components/ui/PlaceholderSlot";
 
 export function Hero() {
   return (

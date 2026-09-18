@@ -1,25 +1,5 @@
-import { PlaceholderSlot } from "./PlaceholderSlot";
-
-const QUOTES = [
-  {
-    metric: "−99% cost",
-    text: "Replaced a full studio day for our new drop. The product stayed exactly on-brand and nobody could tell the difference.",
-    name: "Priya N.",
-    role: "DTC FOUNDER",
-  },
-  {
-    metric: "4 min",
-    text: "Went from a phone photo to a listing-ready image before my coffee got cold. This is the whole product for me.",
-    name: "Marcus T.",
-    role: "ETSY SELLER",
-  },
-  {
-    metric: "2 weeks saved",
-    text: "The batch tool alone paid for the year on our catalog refresh. 1,000 SKUs in an afternoon instead of a fortnight.",
-    name: "Elena R.",
-    role: "CATALOG OPS LEAD",
-  },
-];
+import { PlaceholderSlot } from "@/components/ui/PlaceholderSlot";
+import { quotes } from "./Testimonials.content";
 
 export function Testimonials() {
   return (
@@ -32,7 +12,7 @@ export function Testimonials() {
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {QUOTES.map((q) => (
+          {quotes.map((q) => (
             <div
               key={q.name}
               className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6"
