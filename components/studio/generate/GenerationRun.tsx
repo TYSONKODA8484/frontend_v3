@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { getBatch } from "@/lib/api/generate";
 import type { GenerateJob, JobStatus } from "@/lib/types/generate";
-import { LottiePlayer } from "@/components/ui/LottiePlayer";
-import generatingSpin from "@/lib/lottie/generating-spin.json";
-import successCheck from "@/lib/lottie/success-check.json";
+import { LottieIcon } from "@/components/ui/LottieIcon";
+import loading from "react-useanimations/lib/loading";
+import checkmark from "react-useanimations/lib/checkmark";
 
 const STATUS_MESSAGES = [
   "Analyzing your image…",
@@ -69,9 +69,7 @@ export function GenerationRun({
   if (polling) {
     return (
       <div className="flex flex-col items-center gap-4 py-14 text-center">
-        <div className="h-28 w-28">
-          <LottiePlayer animationData={generatingSpin} />
-        </div>
+        <LottieIcon animation={loading} size={72} />
         <p className="text-[14px] text-muted">{STATUS_MESSAGES[messageIndex]}</p>
         <p className="text-xs text-dim">
           {doneCount}/{jobs.length || grantedCount} done
@@ -89,9 +87,7 @@ export function GenerationRun({
       )}
 
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 flex-none">
-          <LottiePlayer animationData={successCheck} loop={false} />
-        </div>
+        <LottieIcon animation={checkmark} size={28} loop={false} />
         <span className="text-[14px] font-semibold">
           {completed.length} image{completed.length === 1 ? "" : "s"} ready
           {failed.length ? `, ${failed.length} failed` : ""}
