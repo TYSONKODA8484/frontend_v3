@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
 import { siteConfig, socialLabels, type SocialPlatform } from "@/lib/config/site";
 import { footerCols, seoTags } from "./Footer.content";
 import { socialIcons } from "./Footer.social-icons";
@@ -11,13 +12,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-5 pb-6 pt-14">
         <div className="grid grid-cols-1 gap-8 pb-11 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
           <div className="flex flex-col gap-4">
-            <Link href="#top" className="flex items-center gap-2">
-              <svg width="26" height="26" viewBox="0 0 28 28">
-                <rect width="28" height="28" rx="7" fill="var(--color-accent)" />
-                <circle cx="14" cy="14" r="6.4" fill="none" stroke="var(--color-accent-ink)" strokeWidth="2.6" />
-                <circle cx="14" cy="14" r="1.8" fill="var(--color-accent-ink)" />
-              </svg>
-              <span className="font-heading text-[17px] font-bold tracking-tight">{siteConfig.name}</span>
+            <Link href="#top">
+              <Logo size={26} textClassName="text-[17px]" />
             </Link>
             <p className="max-w-[34ch] text-[13px] leading-relaxed text-dim">
               AI product photoshoots, product videos and UGC ads for e-commerce. One upload, every
