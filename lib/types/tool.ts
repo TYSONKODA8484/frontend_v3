@@ -6,6 +6,7 @@ export type Tool = {
   category: string;
   status: string;
   sortOrder: number;
+  icon?: string;
 };
 
 export type ToolsResponse = {

@@ -4,9 +4,11 @@ import {
   Shirt,
   UserRound,
   Eraser,
+  Pencil,
   Brush,
   Sun,
   Maximize,
+  Expand,
   Crop,
   LayoutGrid,
   Layers,
@@ -18,6 +20,28 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Tool } from "@/lib/types/tool";
+
+// Backend-provided icon slugs (GET /landing/tools .icon), confirmed for the
+// finish-category tools — preferred over the keyword guess below whenever present.
+const ICON_BY_SLUG: Record<string, LucideIcon> = {
+  camera: Camera,
+  image: ImageIcon,
+  shirt: Shirt,
+  user: UserRound,
+  eraser: Eraser,
+  pencil: Pencil,
+  brush: Brush,
+  sun: Sun,
+  crop: Crop,
+  expand: Expand,
+  grid: LayoutGrid,
+  layers: Layers,
+  palette: Palette,
+  folder: Folder,
+  clapperboard: Clapperboard,
+  wand: Wand2,
+  sparkles: Sparkles,
+};
 
 const ICON_BY_KEYWORD: [string, LucideIcon][] = [
   ["photoshoot", Camera],
@@ -42,6 +66,7 @@ const ICON_BY_KEYWORD: [string, LucideIcon][] = [
 ];
 
 export function iconForTool(tool: Tool): LucideIcon {
+  if (tool.icon && ICON_BY_SLUG[tool.icon]) return ICON_BY_SLUG[tool.icon];
   const haystack = `${tool.name} ${tool.category}`.toLowerCase();
   const match = ICON_BY_KEYWORD.find(([keyword]) => haystack.includes(keyword));
   return match ? match[1] : Sparkles;

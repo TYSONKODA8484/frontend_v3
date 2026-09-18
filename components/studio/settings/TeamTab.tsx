@@ -5,7 +5,7 @@ import { useTeam } from "@/lib/studio/TeamContext";
 import { useToast } from "@/lib/studio/ToastContext";
 import { getTeamMembers, getTeamInvites, inviteToTeam, cancelInvite } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/authed-fetch";
-import type { TeamInvite, TeamMember, TeamRole } from "@/lib/types/team";
+import type { InviteRole, TeamInvite, TeamMember } from "@/lib/types/team";
 
 function friendlyInviteError(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {
@@ -34,7 +34,7 @@ export function TeamTab() {
   const [invites, setInvites] = useState<TeamInvite[]>([]);
   const [invitesLoading, setInvitesLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<TeamRole>("editor");
+  const [inviteRole, setInviteRole] = useState<InviteRole>("editor");
   const [inviting, setInviting] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
@@ -178,11 +178,11 @@ export function TeamTab() {
               </div>
               <select
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as TeamRole)}
+                onChange={(e) => setInviteRole(e.target.value as InviteRole)}
                 className="border border-border bg-surface px-3 text-[13px] text-text"
               >
                 <option value="editor">Editor</option>
-                <option value="owner">Owner</option>
+                <option value="viewer">Viewer</option>
               </select>
               <button
                 onClick={handleInvite}
