@@ -1,5 +1,6 @@
 import { getTools } from "@/lib/api/tools";
 import { getBilling } from "@/lib/api/billing";
+import { HomeAuthRedirect } from "@/components/HomeAuthRedirect";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/sections/Hero";
@@ -19,6 +20,7 @@ export default async function Home() {
 
   return (
     <>
+      <HomeAuthRedirect />
       <Header />
       <main>
         <Hero />

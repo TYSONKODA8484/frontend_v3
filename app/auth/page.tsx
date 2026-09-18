@@ -13,7 +13,7 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && profile) router.replace("/");
+    if (!loading && profile) router.replace("/studio");
   }, [loading, profile, router]);
 
   return (

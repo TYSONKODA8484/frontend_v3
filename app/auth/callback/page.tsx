@@ -26,7 +26,7 @@ export default function AuthCallbackPage() {
     try {
       await signInWithEmailLink(auth, email, window.location.href);
       clearPendingEmail();
-      router.replace("/");
+      router.replace("/studio");
     } catch {
       setStatus("error");
       setError("That sign-in link is invalid or has expired. Request a new one.");
