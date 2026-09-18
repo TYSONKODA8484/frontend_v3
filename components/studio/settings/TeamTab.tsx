@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useToast } from "@/lib/studio/ToastContext";
 import { getTeamMembers, getTeamInvites, inviteToTeam, cancelInvite } from "@/lib/api/teams";
+import { Plus } from "lucide-react";
 import { ApiError } from "@/lib/api/authed-fetch";
 import type { InviteRole, TeamInvite, TeamMember } from "@/lib/types/team";
 
@@ -24,6 +25,11 @@ function friendlyRenameError(err: unknown): string {
   return "Couldn't rename the team.";
 }
 
+function friendlyCreateError(err: unknown): string {
+  if (err instanceof ApiError && err.status === 400) return "Team name can't be empty.";
+  return "Couldn't create the team.";
+}
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -34,7 +40,15 @@ function initials(name: string) {
 }
 
 export function TeamTab() {
-  const { teams, activeTeamId, activeTeam, loading: teamsLoading, setActiveTeamId, renameTeam } = useTeam();
+  const {
+    teams,
+    activeTeamId,
+    activeTeam,
+    loading: teamsLoading,
+    setActiveTeamId,
+    renameTeam,
+    createTeam,
+  } = useTeam();
   const { say } = useToast();
 
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -47,6 +61,9 @@ export function TeamTab() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const [creatingOpen, setCreatingOpen] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const isOwner = activeTeam?.role === "owner";
 
@@ -62,6 +79,22 @@ export function TeamTab() {
       say(friendlyRenameError(err));
     } finally {
       setRenaming(false);
+    }
+  }
+
+  async function handleCreateTeam() {
+    const name = newTeamName.trim();
+    if (!name) return say("Team name can't be empty.");
+    setCreating(true);
+    try {
+      const team = await createTeam(name);
+      say(`Created ${team.name} — switched to it`);
+      setNewTeamName("");
+      setCreatingOpen(false);
+    } catch (err) {
+      say(friendlyCreateError(err));
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -152,7 +185,39 @@ export function TeamTab() {
               {t.name} ({t.role})
             </button>
           ))}
+          <button
+            onClick={() => setCreatingOpen((o) => !o)}
+            className="flex items-center gap-1.5 rounded-full border border-dashed border-border-strong px-4 py-2 text-[13px] text-muted hover:border-accent hover:text-text"
+          >
+            <Plus size={13} />
+            New team
+          </button>
         </div>
+
+        {creatingOpen && (
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="flex gap-2.5">
+              <div className="flex-1 border border-border bg-surface px-3.5 py-2.5">
+                <input
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="Team name"
+                  className="w-full text-[13.5px]"
+                />
+              </div>
+              <button
+                onClick={handleCreateTeam}
+                disabled={creating}
+                className="whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
+              >
+                {creating ? "Creating…" : "Create"}
+              </button>
+            </div>
+            <p className="text-[11.5px] text-dim">
+              Starts with 0 credits — you&apos;ll need to buy a pack or subscribe before it can generate.
+            </p>
+          </div>
+        )}
       </div>
 
       {isOwner && (

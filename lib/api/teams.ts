@@ -1,6 +1,7 @@
 import { authedJson } from "@/lib/api/authed-fetch";
 import type {
   InviteRole,
+  MyTeam,
   MyTeamsResponse,
   TeamBilling,
   TeamInvitesResponse,
@@ -12,6 +13,14 @@ import type { GenerationsPeriod, GenerationsResponse } from "@/lib/types/generat
 
 export function getMyTeams() {
   return authedJson<MyTeamsResponse>("/teams");
+}
+
+export function createTeam(name: string) {
+  return authedJson<MyTeam>("/teams", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
 }
 
 export function renameTeam(teamId: string, name: string) {
