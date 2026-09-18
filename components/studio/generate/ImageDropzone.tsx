@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { Upload, X } from "lucide-react";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -20,6 +20,16 @@ export function ImageDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    const urls = files.map((f) => URL.createObjectURL(f));
+    // Object URLs must be created/revoked as `files` changes and cleaned up
+    // on unmount — an effect is the correct tool here, not derived state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreviewUrls(urls);
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [files]);
 
   function addFiles(incoming: FileList | File[]) {
     const list = Array.from(incoming);
@@ -90,7 +100,7 @@ export function ImageDropzone({
           {files.map((f, i) => (
             <div key={`${f.name}-${i}`} className="group relative h-16 w-16 flex-none overflow-hidden border border-border">
               {/* eslint-disable-next-line @next/next/no-img-element -- transient local blob preview, not worth next/image's overhead */}
-              <img src={URL.createObjectURL(f)} alt={f.name} className="h-full w-full object-cover" />
+              <img src={previewUrls[i]} alt={f.name} className="h-full w-full object-cover" />
               <button
                 onClick={() => removeAt(i)}
                 className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100"

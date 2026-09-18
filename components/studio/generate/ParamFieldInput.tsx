@@ -27,6 +27,7 @@ export function ParamFieldInput({
     return (
       <SettingsRow
         label={field.label}
+        currentValue={value}
         currentLabel={current ? optionLabel(current) : "None"}
         currentBadge={currentBadge != null ? `${currentBadge}cr` : undefined}
         options={options.map((o) => ({

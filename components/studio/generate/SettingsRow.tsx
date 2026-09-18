@@ -7,12 +7,14 @@ export type SettingsRowOption = { value: string; label: string; badge?: string }
 
 export function SettingsRow({
   label,
+  currentValue,
   currentLabel,
   currentBadge,
   options,
   onSelect,
 }: {
   label: string;
+  currentValue: string;
   currentLabel: string;
   currentBadge?: string;
   options: SettingsRowOption[];
@@ -57,7 +59,7 @@ export function SettingsRow({
                 setOpen(false);
               }}
               className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-[13px] hover:bg-surface-2 ${
-                opt.value === currentLabel || opt.label === currentLabel ? "text-accent" : "text-text"
+                opt.value === currentValue ? "text-accent" : "text-text"
               }`}
             >
               {opt.label}
