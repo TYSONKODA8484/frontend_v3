@@ -1,4 +1,4 @@
-export type ParamFieldType = "select" | "text" | "color";
+export type ParamFieldType = "select" | "text" | "color" | "number";
 
 export type ParamOption =
   | string
@@ -9,8 +9,10 @@ export type ParamField = {
   label: string;
   type: ParamFieldType;
   required: boolean;
-  default?: string;
+  default?: string | number;
   options?: ParamOption[];
+  min?: number;
+  max?: number;
 };
 
 export type ToolSchema = {

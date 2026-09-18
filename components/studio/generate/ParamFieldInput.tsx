@@ -39,6 +39,34 @@ export function ParamFieldInput({
     );
   }
 
+  if (field.type === "number") {
+    const min = field.min ?? 1;
+    const max = field.max ?? 99;
+    const num = Number(value) || min;
+    return (
+      <div className="flex flex-col gap-2">
+        {label}
+        <div className="flex w-max items-center gap-3 border border-border bg-surface px-3 py-2">
+          <button
+            onClick={() => onChange(String(Math.max(min, num - 1)))}
+            className="text-lg text-muted hover:text-text"
+            aria-label={`Fewer ${field.label}`}
+          >
+            −
+          </button>
+          <span className="w-5 text-center font-mono text-sm">{num}</span>
+          <button
+            onClick={() => onChange(String(Math.min(max, num + 1)))}
+            className="text-lg text-muted hover:text-text"
+            aria-label={`More ${field.label}`}
+          >
+            +
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (field.type === "color") {
     return (
       <div className="flex flex-col gap-2">

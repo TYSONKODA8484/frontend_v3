@@ -17,16 +17,26 @@ export function ToolForm({
   onSubmit: (formData: FormData) => void;
   submitting: boolean;
 }) {
+  // output_count is always sent as its own dedicated form field — when the
+  // schema declares it (as a "number" field, e.g. listing_photoshoot), its
+  // min/max/default drive the stepper; otherwise fall back to a sensible default.
+  const outputCountField = schema.paramSchema.find((f) => f.name === "output_count");
+  const otherFields = schema.paramSchema.filter((f) => f.name !== "output_count");
+  const outputMax = outputCountField?.max ?? 8;
+
   const [images, setImages] = useState<File[]>([]);
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
-    for (const f of schema.paramSchema) initial[f.name] = f.default ?? "";
+    for (const f of otherFields) initial[f.name] = f.default != null ? String(f.default) : "";
     return initial;
   });
-  const [outputCount, setOutputCount] = useState(1);
+  const [outputCount, setOutputCount] = useState(() =>
+    outputCountField?.default != null ? Number(outputCountField.default) : 1,
+  );
   const [error, setError] = useState("");
 
   const perImageCost = estimateCreditsPerImage(schema.featureType, schema, values);
+  const needsImages = schema.maxInputImages > 0;
 
   function setValue(name: string, v: string) {
     setValues((prev) => ({ ...prev, [name]: v }));
@@ -34,11 +44,11 @@ export function ToolForm({
   }
 
   function handleSubmit() {
-    if (images.length === 0) {
+    if (needsImages && images.length === 0) {
       setError("Add at least one image.");
       return;
     }
-    for (const field of schema.paramSchema) {
+    for (const field of otherFields) {
       if (field.required && !values[field.name]) {
         setError(`${field.label} is required.`);
         return;
@@ -56,15 +66,17 @@ export function ToolForm({
     for (const [key, val] of Object.entries(values)) {
       if (val) fd.append(key, val);
     }
-    fd.append("output_count", String(outputCount));
+    fd.append("output_count", String(Math.min(outputCount, outputMax)));
     onSubmit(fd);
   }
 
   return (
     <div className="flex flex-col gap-5">
-      <ImageDropzone files={images} onChange={setImages} maxFiles={schema.maxInputImages} />
+      {needsImages && (
+        <ImageDropzone files={images} onChange={setImages} maxFiles={schema.maxInputImages} />
+      )}
 
-      {schema.paramSchema.map((field) => (
+      {otherFields.map((field) => (
         <ParamFieldInput
           key={field.name}
           field={field}
@@ -73,7 +85,7 @@ export function ToolForm({
         />
       ))}
 
-      <OutputCountField value={outputCount} onChange={setOutputCount} />
+      <OutputCountField value={outputCount} onChange={setOutputCount} max={outputMax} />
       <CreditCostBadge perImage={perImageCost} count={outputCount} />
 
       {error && <p className="text-sm text-[#ff8a6b]">{error}</p>}

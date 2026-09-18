@@ -1,16 +1,19 @@
 import type { ToolSchema } from "@/lib/types/generate";
 import { optionCreditCost, optionValue } from "@/lib/types/generate";
 
-// creative_photoshoot's cost isn't in its schema — it's this fixed multiplier
-// table, confirmed directly by the backend team (app/tools/creative_photoshoot.py).
-const CREATIVE_PHOTOSHOOT_QUALITY_MULTIPLIER: Record<string, number> = {
+// creative_photoshoot and listing_photoshoot share this fixed multiplier
+// table — neither has it in their schema, confirmed directly by the backend
+// team (app/tools/creative_photoshoot.py; listing_photoshoot uses the same
+// tables per-shot before multiplying by output_count).
+const QUALITY_RESOLUTION_MULTIPLIER_TOOLS = new Set(["creative_photoshoot", "listing_photoshoot"]);
+const QUALITY_MULTIPLIER: Record<string, number> = {
   low: 1,
   medium: 2,
   high: 5,
   xhigh: 9,
   max: 16,
 };
-const CREATIVE_PHOTOSHOOT_RESOLUTION_MULTIPLIER: Record<string, number> = {
+const RESOLUTION_MULTIPLIER: Record<string, number> = {
   "1k": 2,
   "2k": 4,
   "4k": 6,
@@ -22,9 +25,9 @@ export function estimateCreditsPerImage(
   schema: ToolSchema,
   values: Record<string, string>,
 ): number | null {
-  if (featureType === "creative_photoshoot") {
-    const quality = CREATIVE_PHOTOSHOOT_QUALITY_MULTIPLIER[values.quality];
-    const resolution = CREATIVE_PHOTOSHOOT_RESOLUTION_MULTIPLIER[values.resolution];
+  if (QUALITY_RESOLUTION_MULTIPLIER_TOOLS.has(featureType)) {
+    const quality = QUALITY_MULTIPLIER[values.quality];
+    const resolution = RESOLUTION_MULTIPLIER[values.resolution];
     return quality && resolution ? quality * resolution : null;
   }
 
