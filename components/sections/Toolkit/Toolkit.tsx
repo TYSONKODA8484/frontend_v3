@@ -1,6 +1,6 @@
 import type { Tool } from "@/lib/types/tool";
-import { iconForTool } from "./icon-map";
-import { groupToolsByCategory, titleCase } from "./group-by-category";
+import { iconForTool } from "@/lib/tools/icon-map";
+import { groupToolsByCategory, titleCase } from "@/lib/tools/group-by-category";
 
 export function Toolkit({ tools }: { tools: Tool[] }) {
   const groups = groupToolsByCategory(tools);
