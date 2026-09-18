@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { TeamProvider } from "@/lib/studio/TeamContext";
-import { CreditsProvider } from "@/lib/studio/CreditsContext";
+import { TeamBillingProvider } from "@/lib/studio/TeamBillingContext";
 import { ToastProvider } from "@/lib/studio/ToastContext";
 import { Sidebar } from "@/components/studio/Sidebar";
 import { Navbar } from "@/components/studio/Navbar";
@@ -25,7 +25,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
 
   return (
     <TeamProvider>
-      <CreditsProvider>
+      <TeamBillingProvider>
         <ToastProvider>
           <div className="flex h-screen overflow-hidden">
             <Sidebar />
@@ -37,7 +37,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
           <BuyCreditsModal />
           <Toast />
         </ToastProvider>
-      </CreditsProvider>
+      </TeamBillingProvider>
     </TeamProvider>
   );
 }

@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { X, Check } from "lucide-react";
 import { getBilling } from "@/lib/api/billing";
+import { checkoutCreditPack, checkoutSubscription } from "@/lib/api/checkout";
+import { loadRazorpayCheckout, openRazorpayCheckout } from "@/lib/razorpay/checkout";
 import type { BillingPlan, BillingResponse } from "@/lib/types/billing";
-import { useCredits } from "@/lib/studio/CreditsContext";
+import { useTeam } from "@/lib/studio/TeamContext";
+import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
 import { useToast } from "@/lib/studio/ToastContext";
 
 function formatRupees(paise: number) {
@@ -12,12 +15,15 @@ function formatRupees(paise: number) {
 }
 
 export function BuyCreditsModal() {
-  const { buyModalOpen, buyModalTab, closeBuyModal, recordCreditPurchase, recordSubscription } =
-    useCredits();
+  const { activeTeamId, activeTeam } = useTeam();
+  const { buyModalOpen, buyModalTab, closeBuyModal, refetch } = useTeamBilling();
   const { say } = useToast();
   const [tab, setTab] = useState<"sub" | "credits">(buyModalTab);
   const [billing, setBilling] = useState<BillingResponse>({ subscriptions: [], credits: [] });
   const [loading, setLoading] = useState(true);
+  const [buyingId, setBuyingId] = useState<string | null>(null);
+
+  const isOwner = activeTeam?.role === "owner";
 
   // Reset the local tab to whichever one the opener asked for, each time the
   // modal transitions from closed to open (adjusting state during render
@@ -45,16 +51,49 @@ export function BuyCreditsModal() {
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
-  function handleBuy(plan: BillingPlan) {
-    const priceLabel = `₹${formatRupees(plan.price)}`;
-    if (tab === "sub") {
-      recordSubscription({ name: plan.name, periodLabel: plan.periodLabel }, priceLabel);
-      say(`Switched to ${plan.name.toLowerCase()} billing`);
-    } else {
-      recordCreditPurchase(plan.credits, `${plan.name} — ${plan.credits} credits`, priceLabel);
-      say(`Added ${plan.credits} credits (${plan.name})`);
+  async function handleBuy(plan: BillingPlan) {
+    if (!activeTeamId || !isOwner || buyingId) return;
+    setBuyingId(plan.id);
+    try {
+      await loadRazorpayCheckout();
+      if (tab === "credits") {
+        const checkout = await checkoutCreditPack(activeTeamId, plan.id);
+        openRazorpayCheckout({
+          key: checkout.key_id,
+          amount: checkout.amount,
+          currency: checkout.currency,
+          order_id: checkout.order_id,
+          name: "ShootPX",
+          description: `${plan.name} — ${plan.credits} credits`,
+          theme: { color: "#c8ff00" },
+          handler: () => {
+            closeBuyModal();
+            say("Payment submitted — crediting your account, this can take a few seconds");
+            setTimeout(refetch, 3000);
+          },
+          modal: { ondismiss: () => say("Checkout cancelled") },
+        });
+      } else {
+        const checkout = await checkoutSubscription(activeTeamId, plan.id);
+        openRazorpayCheckout({
+          key: checkout.key_id,
+          subscription_id: checkout.razorpay_subscription_id,
+          name: "ShootPX",
+          description: `${plan.name} subscription`,
+          theme: { color: "#c8ff00" },
+          handler: () => {
+            closeBuyModal();
+            say("Payment submitted — activating your subscription, this can take a few seconds");
+            setTimeout(refetch, 3000);
+          },
+          modal: { ondismiss: () => say("Checkout cancelled") },
+        });
+      }
+    } catch (err) {
+      say(err instanceof Error ? err.message : "Couldn't start checkout. Please try again.");
+    } finally {
+      setBuyingId(null);
     }
-    closeBuyModal();
   }
 
   return (
@@ -75,6 +114,11 @@ export function BuyCreditsModal() {
           Buy credits when you need them, or subscribe for a steady supply. Commercial licence
           included on every plan.
         </p>
+        {!isOwner && (
+          <p className="text-center text-[13px] text-accent">
+            Only the team owner can buy credits or manage subscriptions.
+          </p>
+        )}
 
         <div className="mt-3.5 flex gap-0.5 rounded-full border border-border bg-surface p-1">
           <button
@@ -103,6 +147,7 @@ export function BuyCreditsModal() {
           <div className="mt-9 flex w-full flex-wrap justify-center gap-4">
             {plans.map((plan) => {
               const featured = !!plan.tag;
+              const isBuying = buyingId === plan.id;
               return (
                 <div
                   key={plan.id}
@@ -122,13 +167,14 @@ export function BuyCreditsModal() {
                   </div>
                   <button
                     onClick={() => handleBuy(plan)}
-                    className={`rounded-full py-3 text-[13.5px] font-semibold ${
+                    disabled={!isOwner || buyingId !== null}
+                    className={`rounded-full py-3 text-[13.5px] font-semibold disabled:opacity-50 ${
                       featured
                         ? "bg-accent text-accent-ink hover:bg-accent-hover"
                         : "border border-border-strong hover:border-accent"
                     }`}
                   >
-                    Get started
+                    {isBuying ? "Opening checkout…" : "Get started"}
                   </button>
                   <div className="flex flex-col gap-2 border-t border-border pt-3.5">
                     <span className="font-mono text-[11px] text-dim">INCLUDES</span>

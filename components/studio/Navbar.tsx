@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CircleDollarSign } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useTeam } from "@/lib/studio/TeamContext";
-import { useCredits } from "@/lib/studio/CreditsContext";
+import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
 
 function sectionTitle(pathname: string) {
   if (pathname.startsWith("/studio/tools")) return "Tools";
@@ -26,8 +26,8 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useAuth();
-  const { activeTeamName } = useTeam();
-  const { credits, openBuyModal } = useCredits();
+  const { activeTeam } = useTeam();
+  const { billing, openBuyModal } = useTeamBilling();
 
   const label = profile?.name || profile?.email || "Account";
 
@@ -43,7 +43,7 @@ export function Navbar() {
           className="flex items-center gap-1.5 whitespace-nowrap border border-border-strong px-3.5 py-1.5 font-mono text-xs text-accent hover:border-accent"
         >
           <CircleDollarSign size={15} className="flex-none" />
-          {credits} credits
+          {billing?.totalCredits ?? 0} credits
         </button>
         <button
           onClick={() => router.push("/studio/settings")}
@@ -53,8 +53,10 @@ export function Navbar() {
             {initials(label)}
           </span>
           <span className="text-left leading-tight">
-            <span className="block text-xs font-medium">{activeTeamName}</span>
-            <span className="block font-mono text-[9px] tracking-wide text-dim">Owner</span>
+            <span className="block text-xs font-medium">{activeTeam?.name ?? "Team"}</span>
+            <span className="block font-mono text-[9px] tracking-wide text-dim">
+              {activeTeam?.role ?? ""}
+            </span>
           </span>
         </button>
       </div>

@@ -26,7 +26,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useAuth();
-  const { activeTeamName } = useTeam();
+  const { activeTeam } = useTeam();
 
   const label = profile?.name || profile?.email || "Account";
 
@@ -63,7 +63,7 @@ export function Sidebar() {
         </div>
         <button
           onClick={() => router.push("/studio/settings")}
-          title={`${label} · ${activeTeamName}`}
+          title={`${label} · ${activeTeam?.name ?? "Team"}`}
           className="mt-auto flex h-9 w-9 flex-none items-center justify-center border border-border-strong text-[11px] font-medium hover:border-accent"
         >
           {initials(label)}
@@ -120,7 +120,7 @@ export function Sidebar() {
         </span>
         <span className="min-w-0">
           <span className="block truncate text-[13px] font-medium">{label}</span>
-          <span className="block truncate text-[11px] text-dim">{activeTeamName}</span>
+          <span className="block truncate text-[11px] text-dim">{activeTeam?.name ?? "Team"}</span>
         </span>
       </button>
     </div>

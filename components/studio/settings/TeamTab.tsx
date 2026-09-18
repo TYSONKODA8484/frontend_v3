@@ -1,67 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useToast } from "@/lib/studio/ToastContext";
-import type { TeamRole } from "@/lib/studio/team-types";
+import { getTeamInvites, inviteToTeam, cancelInvite } from "@/lib/api/teams";
+import { ApiError } from "@/lib/api/authed-fetch";
+import type { TeamInvite, TeamRole } from "@/lib/types/team";
+
+function friendlyInviteError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    if (err.status === 409) return "Team is full — 5 seats max, including pending invites.";
+    if (err.status === 429) return "You're sending invites too fast. Wait a moment and try again.";
+    if (err.status === 403) return "Only the team owner can do this.";
+  }
+  return fallback;
+}
 
 export function TeamTab() {
-  const {
-    teams,
-    activeTeamId,
-    activeTeamName,
-    members,
-    setActiveTeamId,
-    createTeam,
-    renameTeam,
-    deleteTeam,
-    canDeleteActiveTeam,
-    invite,
-    removeMember,
-  } = useTeam();
+  const { teams, activeTeamId, activeTeam, loading: teamsLoading, setActiveTeamId } = useTeam();
   const { say } = useToast();
 
-  const [newTeamName, setNewTeamName] = useState("");
-  const [renameValue, setRenameValue] = useState(activeTeamName);
+  const [invites, setInvites] = useState<TeamInvite[]>([]);
+  const [invitesLoading, setInvitesLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<TeamRole>("Editor");
+  const [inviteRole, setInviteRole] = useState<TeamRole>("editor");
+  const [inviting, setInviting] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  // Re-seed the rename field when the active team changes, by adjusting
-  // state during render rather than in an effect (React's documented
-  // pattern for deriving state from a prop change).
-  const [prevActiveTeamName, setPrevActiveTeamName] = useState(activeTeamName);
-  if (activeTeamName !== prevActiveTeamName) {
-    setPrevActiveTeamName(activeTeamName);
-    setRenameValue(activeTeamName);
+  const isOwner = activeTeam?.role === "owner";
+
+  function loadInvites() {
+    if (!activeTeamId || !isOwner) {
+      setInvites([]);
+      setInvitesLoading(false);
+      return;
+    }
+    setInvitesLoading(true);
+    getTeamInvites(activeTeamId)
+      .then((r) => setInvites(r.invites))
+      .catch(() => setInvites([]))
+      .finally(() => setInvitesLoading(false));
   }
 
-  function handleCreate() {
-    const name = newTeamName.trim();
-    if (!name) return say("Enter a team name first");
-    createTeam(name);
-    setNewTeamName("");
-    say(`Created team "${name}"`);
-  }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching invites when the active team (or owner status) changes
+    loadInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTeamId, isOwner]);
 
-  function handleRename() {
-    const name = renameValue.trim();
-    if (!name) return;
-    renameTeam(name);
-    say(`Team renamed to "${name}"`);
-  }
-
-  function handleInvite() {
+  async function handleInvite() {
+    if (!activeTeamId) return;
     if (!inviteEmail || inviteEmail.indexOf("@") < 1) return say("Enter a valid email to invite");
-    invite(inviteEmail, inviteRole);
-    say(`Invite sent to ${inviteEmail}`);
-    setInviteEmail("");
+    setInviting(true);
+    try {
+      await inviteToTeam(activeTeamId, inviteEmail, inviteRole);
+      say(`Invite sent to ${inviteEmail}`);
+      setInviteEmail("");
+      loadInvites();
+    } catch (err) {
+      say(friendlyInviteError(err, "Couldn't send the invite"));
+    } finally {
+      setInviting(false);
+    }
   }
 
-  function handleDelete() {
-    const name = activeTeamName;
-    deleteTeam();
-    say(`Deleted team "${name}"`);
+  async function handleCancelInvite(id: string) {
+    if (!activeTeamId) return;
+    setCancellingId(id);
+    try {
+      await cancelInvite(activeTeamId, id);
+      say("Invite cancelled");
+      loadInvites();
+    } catch (err) {
+      say(friendlyInviteError(err, "Couldn't cancel the invite"));
+    } finally {
+      setCancellingId(null);
+    }
   }
+
+  if (teamsLoading) return <p className="text-sm text-dim">Loading teams…</p>;
 
   return (
     <div className="flex flex-col gap-5">
@@ -80,120 +97,78 @@ export function TeamTab() {
                   : "border border-border-strong text-muted hover:border-accent hover:text-text"
               }`}
             >
-              {t.name}
+              {t.name} ({t.role})
             </button>
           ))}
         </div>
       </div>
 
-      <div className="border-t border-border pt-4">
-        <label className="font-mono text-[10.5px] tracking-wide text-dim">CREATE A NEW TEAM</label>
-        <div className="mt-2.5 flex gap-2.5">
-          <div className="flex-1 border border-border bg-surface px-3.5 py-2.5">
-            <input
-              value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
-              placeholder="Team name"
-              className="w-full text-[13.5px]"
-            />
-          </div>
-          <button
-            onClick={handleCreate}
-            className="whitespace-nowrap rounded-full border border-border-strong bg-surface px-5 py-2.5 text-[13.5px] font-medium hover:border-accent"
-          >
-            Create
-          </button>
-        </div>
-      </div>
-
-      <div className="border-t border-border pt-4">
-        <label className="font-mono text-[10.5px] tracking-wide text-dim">
-          RENAME &quot;{activeTeamName}&quot;
-        </label>
-        <div className="mt-2.5 flex gap-2.5">
-          <div className="flex-1 border border-border bg-surface px-3.5 py-2.5">
-            <input
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              className="w-full text-[13.5px]"
-            />
-          </div>
-          <button
-            onClick={handleRename}
-            className="whitespace-nowrap rounded-full border border-border-strong bg-surface px-5 py-2.5 text-[13.5px] font-medium hover:border-accent"
-          >
-            Rename
-          </button>
-        </div>
-      </div>
-
-      <div className="flex gap-2.5">
-        <div className="flex-1 border border-border bg-surface px-3.5 py-2.5">
-          <input
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="teammate@brandco.com"
-            className="w-full text-[13.5px]"
-          />
-        </div>
-        <select
-          value={inviteRole}
-          onChange={(e) => setInviteRole(e.target.value as TeamRole)}
-          className="border border-border bg-surface px-3 text-[13px] text-text"
-        >
-          <option value="Editor">Editor</option>
-          <option value="Viewer">Viewer</option>
-        </select>
-        <button
-          onClick={handleInvite}
-          className="whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-ink hover:bg-accent-hover"
-        >
-          Invite
-        </button>
-      </div>
-
-      <div className="border border-border">
-        {members.map((m) => (
-          <div key={m.id} className="flex items-center gap-3.5 border-b border-border px-4 py-3.5 last:border-b-0">
-            <div className="flex h-8 w-8 flex-none items-center justify-center border border-border-strong bg-surface-2 text-[11px] font-medium">
-              {m.name
-                .split(" ")
-                .map((w) => w[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-medium">{m.name}</div>
-              <div className="text-xs text-dim">{m.email}</div>
-            </div>
-            <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[10.5px] tracking-wide text-muted">
-              {m.role}
-            </span>
-            {m.canRemove ? (
-              <button
-                onClick={() => removeMember(m.id)}
-                className="w-16 text-right text-xs text-dim hover:text-[#ff8a6b]"
+      {isOwner ? (
+        <>
+          <div className="border-t border-border pt-4">
+            <label className="font-mono text-[10.5px] tracking-wide text-dim">
+              INVITE A TEAMMATE
+            </label>
+            <div className="mt-2.5 flex gap-2.5">
+              <div className="flex-1 border border-border bg-surface px-3.5 py-2.5">
+                <input
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="teammate@brandco.com"
+                  className="w-full text-[13.5px]"
+                />
+              </div>
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as TeamRole)}
+                className="border border-border bg-surface px-3 text-[13px] text-text"
               >
-                Remove
+                <option value="editor">Editor</option>
+                <option value="owner">Owner</option>
+              </select>
+              <button
+                onClick={handleInvite}
+                disabled={inviting}
+                className="whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
+              >
+                {inviting ? "Sending…" : "Invite"}
               </button>
-            ) : (
-              <span className="w-16" />
-            )}
+            </div>
+            <p className="mt-2 text-[11.5px] text-dim">5 seats max per team, including pending invites.</p>
           </div>
-        ))}
-      </div>
 
-      {canDeleteActiveTeam && (
-        <div className="border-t border-border pt-4">
-          <label className="font-mono text-[10.5px] tracking-wide text-dim">DANGER ZONE</label>
-          <button
-            onClick={handleDelete}
-            className="mt-2.5 inline-block rounded-full border border-[#ff5c4d] px-4 py-2.5 text-[13px] text-[#ff8a6b] hover:bg-[#ff5c4d]/10"
-          >
-            Delete team
-          </button>
-        </div>
+          <div>
+            <span className="font-mono text-[11px] tracking-wide text-dim">PENDING INVITES</span>
+            <div className="mt-3 border border-border">
+              {invitesLoading ? (
+                <p className="p-4 text-center text-[13px] text-dim">Loading…</p>
+              ) : invites.length === 0 ? (
+                <p className="p-4 text-center text-[13px] text-dim">No pending invites.</p>
+              ) : (
+                invites.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="flex items-center gap-3.5 border-b border-border px-4 py-3 text-[13px] last:border-b-0"
+                  >
+                    <span className="flex-1">{inv.email}</span>
+                    <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[10.5px] tracking-wide text-muted">
+                      {inv.role}
+                    </span>
+                    <button
+                      onClick={() => handleCancelInvite(inv.id)}
+                      disabled={cancellingId === inv.id}
+                      className="text-xs text-dim hover:text-[#ff8a6b] disabled:opacity-60"
+                    >
+                      {cancellingId === inv.id ? "Cancelling…" : "Cancel"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <p className="text-[13px] text-dim">Only the team owner can invite teammates.</p>
       )}
     </div>
   );
