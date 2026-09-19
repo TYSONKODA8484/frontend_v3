@@ -76,11 +76,27 @@ export function TeamBillingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // No push channel from the backend, so this is how another teammate's
     // spending or a purchase made in a different tab eventually shows up
-    // here without a manual reload — not instant, but no longer "only on
-    // reload" either. load() itself already avoids flashing a loading state.
+    // here without a manual reload. This can't be truly instant without the
+    // backend pushing an event on balance change (WebSocket/SSE) — polling
+    // always has a delay window — but 15s while the tab is actually visible
+    // is a reasonable "feels live" cadence without hammering the backend
+    // from every idle tab. load() itself already avoids flashing a loading
+    // state, so this never visibly interrupts anything.
     if (!activeTeamId) return;
-    const interval = setInterval(load, 45_000);
-    return () => clearInterval(interval);
+
+    function tick() {
+      if (document.visibilityState === "visible") load();
+    }
+
+    const interval = setInterval(tick, 15_000);
+    // Also refetch the moment someone tabs back in — covers "was away for a
+    // while, teammate spent credits in the meantime" without waiting out
+    // the rest of the interval.
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [activeTeamId, load]);
 
   // On reload, activeTeamId starts null until GET /teams resolves — during

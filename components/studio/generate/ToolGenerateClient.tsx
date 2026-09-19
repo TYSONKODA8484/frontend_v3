@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { getToolSchema, generate } from "@/lib/api/generate";
+import { ApiError } from "@/lib/api/authed-fetch";
+import { useTeam } from "@/lib/studio/TeamContext";
+import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
+import { useToast } from "@/lib/studio/ToastContext";
+import { ToolForm } from "@/components/studio/generate/ToolForm";
+import { GenerationRun } from "@/components/studio/generate/GenerationRun";
+import { EmptyResults } from "@/components/studio/generate/EmptyResults";
+import type { GenerateResponse, ToolSchema } from "@/lib/types/generate";
+
+// model_shoot uses grouped image fields (model_image/top_images/etc), not the
+// generic images[] every other tool uses — its dedicated flow isn't built yet.
+const UNSUPPORTED_FEATURE_TYPES = new Set(["model_shoot"]);
+
+export function ToolGenerateClient({ featureType, isLive }: { featureType: string; isLive: boolean }) {
+  const { activeTeamId } = useTeam();
+  const { refetch: refetchBilling } = useTeamBilling();
+  const { say } = useToast();
+
+  const [schema, setSchema] = useState<ToolSchema | null>(null);
+  // Not live in the catalog — known synchronously from the prop, so there's
+  // nothing to load and no schema fetch ever fires (this is the actual
+  // access gate; the catalog page just hides the link).
+  const [schemaLoading, setSchemaLoading] = useState(isLive);
+  const [schemaError, setSchemaError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [run, setRun] = useState<GenerateResponse | null>(null);
+
+  useEffect(() => {
+    if (!isLive) return;
+    // Fetching the schema when the tool changes is exactly what this effect
+    // is for; the lint rule flags the loading-flag set that precedes it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSchemaLoading(true);
+    getToolSchema(featureType)
+      .then(setSchema)
+      .catch((err) => {
+        setSchemaError(
+          err instanceof ApiError && err.status === 404
+            ? "This tool isn't available yet."
+            : "Couldn't load this tool right now.",
+        );
+      })
+      .finally(() => setSchemaLoading(false));
+  }, [featureType, isLive]);
+
+  async function handleSubmit(formData: FormData) {
+    if (!activeTeamId) {
+      say("No active team found");
+      return;
+    }
+    formData.append("team_id", activeTeamId);
+    setSubmitting(true);
+    try {
+      const res = await generate(formData);
+      setRun(res);
+      // Credits are held/granted at submission — reflect that immediately
+      // rather than waiting for the next background billing poll.
+      refetchBilling();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 400 && /already in progress/i.test(err.message)) {
+          say("A generation is already running — wait for it to finish first.");
+        } else if (err.status === 403) {
+          say("You need to be a member of this team to generate.");
+        } else if (err.status === 503) {
+          say("The generation service is busy — please try again in a moment.");
+        } else if (err.status === 400) {
+          say("Couldn't start generation — check your inputs.");
+        } else {
+          say("Couldn't start generation. Please try again.");
+        }
+      } else {
+        say("Couldn't start generation. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!isLive) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-11 text-center text-dim">
+        <span className="text-3xl opacity-50">▢</span>
+        <span className="text-[15px] font-semibold text-muted">This tool isn&apos;t available yet.</span>
+      </div>
+    );
+  }
+
+  if (schemaLoading) {
+    return (
+      <div className="flex h-full items-center justify-center text-dim">
+        <Loader2 className="animate-spin" size={24} />
+      </div>
+    );
+  }
+
+  if (schemaError || !schema || UNSUPPORTED_FEATURE_TYPES.has(schema.featureType)) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-11 text-center text-dim">
+        <span className="text-3xl opacity-50">▢</span>
+        <span className="text-[15px] font-semibold text-muted">
+          {schemaError || "This tool's flow isn't built yet."}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full">
+      <ToolForm schema={schema} onSubmit={handleSubmit} submitting={submitting} />
+      <div className="flex-1 overflow-auto">
+        {run ? (
+          <GenerationRun
+            key={run.batchId}
+            batchId={run.batchId}
+            initialJobs={run.jobs}
+            grantedCount={run.grantedCount}
+            requestedCount={run.requestedCount}
+            partial={run.partial}
+            featureType={schema.featureType}
+          />
+        ) : (
+          <EmptyResults />
+        )}
+      </div>
+    </div>
+  );
+}
