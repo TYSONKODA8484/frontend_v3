@@ -46,16 +46,20 @@ export function ToolsGrid({ tools }: { tools: Tool[] }) {
                   <span className="text-[12.5px] leading-snug text-muted">{t.description}</span>
                 </>
               );
+              // Keyed on slug, not id — the catalog's placeholder "soon"
+              // entries don't reliably have a populated/unique id yet, but
+              // slug is already load-bearing elsewhere (it builds the href
+              // below), so it's the field actually guaranteed unique here.
               return soon ? (
                 <div
-                  key={t.id}
+                  key={t.slug}
                   className="flex min-h-[118px] flex-col gap-2.5 bg-bg px-4 py-4 opacity-[0.55]"
                 >
                   {content}
                 </div>
               ) : (
                 <Link
-                  key={t.id}
+                  key={t.slug}
                   href={`/studio/tools/${resolveFeatureType(t.slug)}`}
                   className="flex min-h-[118px] flex-col gap-2.5 bg-bg px-4 py-4 hover:bg-surface"
                 >

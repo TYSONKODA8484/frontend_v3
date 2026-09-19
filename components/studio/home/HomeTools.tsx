@@ -57,7 +57,7 @@ export function HomeTools({ tools }: { tools: Tool[] }) {
             const Icon = iconForTool(t);
             return (
               <Link
-                key={t.id}
+                key={t.slug}
                 href={`/studio/tools/${resolveFeatureType(t.slug)}`}
                 className="flex flex-col gap-1.5 bg-bg px-4 py-3.5 hover:bg-surface"
               >
