@@ -16,12 +16,20 @@ function formatRupees(paise: number) {
 
 export function BuyCreditsModal() {
   const { activeTeamId, activeTeam } = useTeam();
-  const { buyModalOpen, buyModalTab, closeBuyModal, refetch } = useTeamBilling();
+  const { billing: teamBilling, buyModalOpen, buyModalTab, closeBuyModal, refetch } = useTeamBilling();
   const { say } = useToast();
   const [tab, setTab] = useState<"sub" | "credits">(buyModalTab);
   const [billing, setBilling] = useState<BillingResponse>({ subscriptions: [], credits: [] });
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  // After a successful payment, the backend credits the account via a
+  // webhook that isn't instant — a single delayed refetch left the pill
+  // showing the old total for up to a minute with no feedback. This polls
+  // until the total actually changes (or gives up after a minute, at which
+  // point TeamBillingContext's own background refresh will pick it up).
+  const [awaitingCredit, setAwaitingCredit] = useState<{ prevCredits: number; startedAt: number } | null>(
+    null,
+  );
 
   const isOwner = activeTeam?.role === "owner";
 
@@ -44,6 +52,24 @@ export function BuyCreditsModal() {
       .then(setBilling)
       .finally(() => setLoading(false));
   }, [buyModalOpen]);
+
+  useEffect(() => {
+    if (!awaitingCredit) return;
+    if (teamBilling && teamBilling.totalCredits !== awaitingCredit.prevCredits) {
+      say(`Credits added — you now have ${teamBilling.totalCredits}.`);
+      // Reacting to teamBilling (an external value from context) changing —
+      // exactly the "subscribe to an external system" case the rule allows.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAwaitingCredit(null);
+      return;
+    }
+    if (Date.now() - awaitingCredit.startedAt > 60_000) {
+      setAwaitingCredit(null);
+      return;
+    }
+    const t = setTimeout(refetch, 2000);
+    return () => clearTimeout(t);
+  }, [awaitingCredit, teamBilling, refetch, say]);
 
   if (!buyModalOpen) return null;
 
@@ -68,8 +94,8 @@ export function BuyCreditsModal() {
           theme: { color: "#c8ff00" },
           handler: () => {
             closeBuyModal();
-            say("Payment submitted — crediting your account, this can take a few seconds");
-            setTimeout(refetch, 3000);
+            say("Payment submitted — crediting your account…");
+            setAwaitingCredit({ prevCredits: teamBilling?.totalCredits ?? 0, startedAt: Date.now() });
           },
           modal: { ondismiss: () => say("Checkout cancelled") },
         });
@@ -83,8 +109,8 @@ export function BuyCreditsModal() {
           theme: { color: "#c8ff00" },
           handler: () => {
             closeBuyModal();
-            say("Payment submitted — activating your subscription, this can take a few seconds");
-            setTimeout(refetch, 3000);
+            say("Payment submitted — activating your subscription…");
+            setAwaitingCredit({ prevCredits: teamBilling?.totalCredits ?? 0, startedAt: Date.now() });
           },
           modal: { ondismiss: () => say("Checkout cancelled") },
         });

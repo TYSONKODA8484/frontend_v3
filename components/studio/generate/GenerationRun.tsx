@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getBatch } from "@/lib/api/generate";
+import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
 import type { GenerateJob, JobStatus } from "@/lib/types/generate";
 import { LottieIcon } from "@/components/ui/LottieIcon";
 import loading from "react-useanimations/lib/loading";
@@ -46,6 +47,7 @@ export function GenerationRun({
   const [jobs, setJobs] = useState<GenerateJob[]>(initialJobs);
   const [polling, setPolling] = useState(true);
   const [messageIndex, setMessageIndex] = useState(0);
+  const { refetch: refetchBilling } = useTeamBilling();
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +61,9 @@ export function GenerationRun({
           setJobs(res.jobs);
           if (res.jobs.every((j) => TERMINAL.includes(j.status))) {
             setPolling(false);
+            // Final settled charges (failed jobs get refunded) land once the
+            // batch is done — reflect that in the credits pill right away.
+            refetchBilling();
             return;
           }
           timeoutId = setTimeout(poll, pollDelay(Date.now() - startedAt));
@@ -72,7 +77,7 @@ export function GenerationRun({
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [batchId]);
+  }, [batchId, refetchBilling]);
 
   useEffect(() => {
     if (!polling) return;

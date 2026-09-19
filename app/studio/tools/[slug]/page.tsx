@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { getToolSchema, generate } from "@/lib/api/generate";
 import { ApiError } from "@/lib/api/authed-fetch";
 import { useTeam } from "@/lib/studio/TeamContext";
+import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
 import { useToast } from "@/lib/studio/ToastContext";
 import { ToolForm } from "@/components/studio/generate/ToolForm";
 import { GenerationRun } from "@/components/studio/generate/GenerationRun";
@@ -19,6 +20,7 @@ const UNSUPPORTED_FEATURE_TYPES = new Set(["model_shoot"]);
 export default function ToolGeneratePage() {
   const { slug } = useParams<{ slug: string }>();
   const { activeTeamId } = useTeam();
+  const { refetch: refetchBilling } = useTeamBilling();
   const { say } = useToast();
 
   const [schema, setSchema] = useState<ToolSchema | null>(null);
@@ -54,6 +56,9 @@ export default function ToolGeneratePage() {
     try {
       const res = await generate(formData);
       setRun(res);
+      // Credits are held/granted at submission — reflect that immediately
+      // rather than waiting for the next background billing poll.
+      refetchBilling();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 400 && /already in progress/i.test(err.message)) {

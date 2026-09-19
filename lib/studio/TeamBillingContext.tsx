@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamBilling } from "@/lib/api/teams";
 import { readCache, writeCache } from "@/lib/studio/session-cache";
@@ -39,7 +39,10 @@ export function TeamBillingProvider({ children }: { children: ReactNode }) {
   const [buyModalOpen, setBuyModalOpen] = useState(false);
   const [buyModalTab, setBuyModalTab] = useState<BuyTab>("credits");
 
-  function load() {
+  // Memoized so consumers (the purchase-success poll, GenerationRun's
+  // completion refetch) can safely depend on it without that dependency
+  // forcing their effects to re-run on every unrelated render.
+  const load = useCallback(() => {
     if (!activeTeamId) {
       // Not "no billing to show" — teams may still be loading and
       // activeTeamId just hasn't arrived yet. Only teamsLoading actually
@@ -63,13 +66,22 @@ export function TeamBillingProvider({ children }: { children: ReactNode }) {
         // than zeroing out the credits pill just because a refresh failed.
       })
       .finally(() => setBillingLoading(false));
-  }
+  }, [activeTeamId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching billing whenever the active team changes
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTeamId]);
+  }, [load]);
+
+  useEffect(() => {
+    // No push channel from the backend, so this is how another teammate's
+    // spending or a purchase made in a different tab eventually shows up
+    // here without a manual reload — not instant, but no longer "only on
+    // reload" either. load() itself already avoids flashing a loading state.
+    if (!activeTeamId) return;
+    const interval = setInterval(load, 45_000);
+    return () => clearInterval(interval);
+  }, [activeTeamId, load]);
 
   // On reload, activeTeamId starts null until GET /teams resolves — during
   // that window billingLoading alone would read false (nothing to fetch
