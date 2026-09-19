@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamGenerations } from "@/lib/api/teams";
 import { readCache, writeCache } from "@/lib/studio/session-cache";
+import { dedupeByJobId } from "@/lib/tools/dedupe-generations";
 import type { Generation } from "@/lib/types/generation";
 
 const RECENT_LIMIT = 8;
@@ -25,8 +26,8 @@ export function RecentWork() {
   const { activeTeamId, loading: teamsLoading } = useTeam();
   // Hydrate from last session's cache so a reload shows the previous
   // thumbnails immediately instead of a loading state.
-  const [items, setItems] = useState<Generation[]>(
-    () => (activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))) || [],
+  const [items, setItems] = useState<Generation[]>(() =>
+    dedupeByJobId((activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))) || []),
   );
   const [itemsLoading, setItemsLoading] = useState(
     () => !(activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))),
@@ -41,11 +42,11 @@ export function RecentWork() {
       return;
     }
     const cached = readCache<Generation[]>(recentCacheKey(activeTeamId));
-    if (cached) setItems(cached);
+    if (cached) setItems(dedupeByJobId(cached));
     else setItemsLoading(true);
     getTeamGenerations(activeTeamId, { limit: RECENT_LIMIT })
       .then((r) => {
-        setItems(r.generations);
+        setItems(dedupeByJobId(r.generations));
         writeCache(recentCacheKey(activeTeamId), r.generations);
       })
       .catch(() => {

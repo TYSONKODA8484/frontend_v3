@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamGenerations } from "@/lib/api/teams";
 import { readCache, writeCache } from "@/lib/studio/session-cache";
+import { dedupeByJobId } from "@/lib/tools/dedupe-generations";
 import type { Generation, GenerationsPeriod } from "@/lib/types/generation";
 
 const PAGE_SIZE = 24;
@@ -38,8 +39,8 @@ export default function StudioLibrary() {
   const [period, setPeriod] = useState<GenerationsPeriod>(DEFAULT_PERIOD);
   // Hydrate the first page from last session's cache so landing on Library
   // shows real thumbnails immediately instead of a loading state.
-  const [items, setItems] = useState<Generation[]>(
-    () => (activeTeamId && readCache<Generation[]>(libraryCacheKey(activeTeamId, DEFAULT_PERIOD))) || [],
+  const [items, setItems] = useState<Generation[]>(() =>
+    dedupeByJobId((activeTeamId && readCache<Generation[]>(libraryCacheKey(activeTeamId, DEFAULT_PERIOD))) || []),
   );
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -57,14 +58,14 @@ export default function StudioLibrary() {
     }
     if (replace) {
       const cached = readCache<Generation[]>(libraryCacheKey(activeTeamId, period));
-      if (cached) setItems(cached);
+      if (cached) setItems(dedupeByJobId(cached));
       else setItemsLoading(true);
     } else {
       setItemsLoading(true);
     }
     getTeamGenerations(activeTeamId, { limit: PAGE_SIZE, offset: nextOffset, period })
       .then((r) => {
-        setItems((prev) => (replace ? r.generations : [...prev, ...r.generations]));
+        setItems((prev) => dedupeByJobId(replace ? r.generations : [...prev, ...r.generations]));
         setHasMore(r.generations.length === PAGE_SIZE);
         setOffset(nextOffset);
         if (replace) writeCache(libraryCacheKey(activeTeamId, period), r.generations);
