@@ -1,5 +1,5 @@
-import { PlaceholderSlot } from "@/components/ui/PlaceholderSlot";
-import { pillars } from "./Platform.content";
+import { SlotImage } from "@/components/ui/SlotImage";
+import { pillars } from "@/content/platform";
 
 export function Platform() {
   return (
@@ -23,7 +23,7 @@ export function Platform() {
           >
             {p.imageFirst && (
               <div className="relative min-h-[280px] flex-1 border-b border-border md:border-b-0 md:border-r">
-                <PlaceholderSlot label={p.placeholder} />
+                <SlotImage src={p.image} alt={p.alt} placeholder={p.placeholder} sizes="(min-width: 768px) 50vw, 100vw" />
               </div>
             )}
             <div className="flex flex-1 flex-col justify-center gap-4 px-8 py-9">
@@ -43,7 +43,7 @@ export function Platform() {
             </div>
             {!p.imageFirst && (
               <div className="relative min-h-[280px] flex-1 border-t border-border md:border-l md:border-t-0">
-                <PlaceholderSlot label={p.placeholder} />
+                <SlotImage src={p.image} alt={p.alt} placeholder={p.placeholder} sizes="(min-width: 768px) 50vw, 100vw" />
               </div>
             )}
           </div>

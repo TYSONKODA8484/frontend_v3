@@ -1,5 +1,6 @@
 "use client";
 
+import { LogoMark } from "@/components/ui/Logo";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -34,11 +35,7 @@ export function Sidebar() {
     return (
       <div className="flex w-[76px] flex-none flex-col items-center gap-3.5 overflow-auto border-r border-border bg-bg py-4">
         <button onClick={() => setOpen(true)} title="Expand sidebar" className="flex-none">
-          <svg width="26" height="26" viewBox="0 0 26 26">
-            <rect width="26" height="26" rx="7" fill="var(--color-accent)" />
-            <circle cx="13" cy="13" r="6" fill="none" stroke="var(--color-accent-ink)" strokeWidth="2.6" />
-            <circle cx="13" cy="13" r="1.7" fill="var(--color-accent-ink)" />
-          </svg>
+          <LogoMark size={26} />
         </button>
         <div className="flex w-full flex-col items-center gap-0.5">
           {studioNavItems.map((n) => {
@@ -75,11 +72,7 @@ export function Sidebar() {
   return (
     <div className="flex w-[180px] flex-none flex-col gap-5 overflow-auto border-r border-border bg-bg px-3.5 py-4">
       <div className="flex items-center gap-2.5">
-        <svg width="26" height="26" viewBox="0 0 26 26" className="flex-none">
-          <rect width="26" height="26" rx="7" fill="var(--color-accent)" />
-          <circle cx="13" cy="13" r="6" fill="none" stroke="var(--color-accent-ink)" strokeWidth="2.6" />
-          <circle cx="13" cy="13" r="1.7" fill="var(--color-accent-ink)" />
-        </svg>
+        <LogoMark size={26} />
         <span className="font-heading text-[17px] font-bold tracking-tight">ShootPX</span>
         <button
           onClick={() => setOpen(false)}

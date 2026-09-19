@@ -39,7 +39,7 @@ export function TeamBillingProvider({ children }: { children: ReactNode }) {
   const [buyModalOpen, setBuyModalOpen] = useState(false);
   const [buyModalTab, setBuyModalTab] = useState<BuyTab>("credits");
 
-  // Memoized so consumers (the purchase-success poll, GenerationRun's
+  // Memoized so consumers (the purchase-success poll, the generation results panel's
   // completion refetch) can safely depend on it without that dependency
   // forcing their effects to re-run on every unrelated render.
   const load = useCallback(() => {

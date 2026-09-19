@@ -1,4 +1,4 @@
-import { PlaceholderSlot } from "@/components/ui/PlaceholderSlot";
+import { SlotImage } from "@/components/ui/SlotImage";
 
 export function Hero() {
   return (
@@ -41,7 +41,13 @@ export function Hero() {
         <span className="font-mono text-[11px] tracking-wide text-dim">PAY AS YOU GO</span>
 
         <div className="relative mt-3.5 aspect-video w-full overflow-hidden rounded-2xl border border-border-strong bg-surface">
-          <PlaceholderSlot label="ShootPX editor screenshot — 16:9" />
+          <SlotImage
+            src="/home/home.webp"
+            alt="The ShootPX editor turning a product photo into finished studio shots"
+            placeholder="ShootPX editor screenshot — 16:9"
+            sizes="(min-width: 1280px) 1200px, 100vw"
+            priority
+          />
         </div>
       </div>
     </section>

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CreditIcon } from "@/components/ui/CreditIcon";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamUsage } from "@/lib/api/teams";
+import { titleCase } from "@/lib/tools/group-by-category";
 import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { TeamUsage, TeamUsagePeriod } from "@/lib/types/team";
 
@@ -46,7 +48,10 @@ export function UsageTab() {
         writeCache(usageCacheKey(activeTeamId, period), res);
       })
       .catch(() => {
-        // Keep whatever we already have rather than showing "couldn't load".
+        // Never leave the previous period's numbers under the new period's
+        // label: keep only this period's own cached data, otherwise show the
+        // error state.
+        if (!cached) setUsage(null);
       })
       .finally(() => setUsageLoading(false));
   }
@@ -101,7 +106,10 @@ export function UsageTab() {
                     className="flex items-center justify-between border-b border-border px-4 py-2.5 text-[13px] last:border-b-0"
                   >
                     <span>{m.name}</span>
-                    <span className="font-mono text-dim">{m.credits} cr</span>
+                    <span className="credit-amount font-mono text-dim">
+                      <CreditIcon size={12} />
+                      {m.credits}
+                    </span>
                   </div>
                 ))
               )}
@@ -119,8 +127,12 @@ export function UsageTab() {
                     key={t.featureType}
                     className="flex items-center justify-between border-b border-border px-4 py-2.5 text-[13px] last:border-b-0"
                   >
-                    <span>{t.displayName}</span>
-                    <span className="font-mono text-dim">{t.credits} cr</span>
+                    {/* hidden internal tools come back without a display name */}
+                    <span>{t.displayName && t.displayName !== t.featureType ? t.displayName : titleCase(t.featureType)}</span>
+                    <span className="credit-amount font-mono text-dim">
+                      <CreditIcon size={12} />
+                      {t.credits}
+                    </span>
                   </div>
                 ))
               )}

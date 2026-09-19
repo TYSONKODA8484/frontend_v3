@@ -1,5 +1,5 @@
 import { siteConfig } from "@/lib/config/site";
-import { faqs } from "@/components/sections/Faq.content";
+import { faqs } from "@/content/faq";
 
 export function buildJsonLd() {
   return {
@@ -32,7 +32,6 @@ export function buildJsonLd() {
           { "@type": "Offer", name: "Starter credits", price: "1000", priceCurrency: "INR" },
           { "@type": "Offer", name: "Popular credits", price: "2500", priceCurrency: "INR" },
         ],
-        aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", reviewCount: "312" },
       },
       {
         "@type": "FAQPage",

@@ -1,4 +1,4 @@
-import { outcomes } from "./Outcomes.content";
+import { outcomes } from "@/content/outcomes";
 
 export function Outcomes() {
   return (

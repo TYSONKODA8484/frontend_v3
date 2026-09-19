@@ -31,6 +31,20 @@ export function renameTeam(teamId: string, name: string) {
   });
 }
 
+// Owner only. Soft delete: the backend cancels the subscription and keeps the
+// data recoverable until `recoverableUntil`.
+export function deleteTeam(teamId: string) {
+  return authedJson<{ deleted: string; recoverableUntil: string }>(`/teams/${teamId}`, {
+    method: "DELETE",
+  });
+}
+
+// Owner only, within the grace period. Data and credits come back as they
+// were; the subscription does not resume.
+export function restoreTeam(teamId: string) {
+  return authedJson<unknown>(`/teams/${teamId}/restore`, { method: "POST" });
+}
+
 export function getTeamMembers(teamId: string) {
   return authedJson<TeamMembersResponse>(`/teams/${teamId}/members`);
 }
@@ -75,7 +89,12 @@ export function getTeamGenerations(
     offset?: number;
     featureType?: string;
     userId?: string;
+    status?: "queued" | "processing" | "completed" | "failed";
     period?: GenerationsPeriod;
+    fromDate?: string; // ISO datetime; the backend ignores period when a date bound is sent
+    toDate?: string;
+    // "library" also includes model_shoot_generate_model results; the default ("recent") is Home's.
+    view?: "recent" | "library";
   },
 ) {
   const qs = new URLSearchParams();
@@ -83,7 +102,11 @@ export function getTeamGenerations(
   if (params?.offset != null) qs.set("offset", String(params.offset));
   if (params?.featureType) qs.set("feature_type", params.featureType);
   if (params?.userId) qs.set("user_id", params.userId);
+  if (params?.status) qs.set("status", params.status);
   if (params?.period) qs.set("period", params.period);
+  if (params?.fromDate) qs.set("from_date", params.fromDate);
+  if (params?.toDate) qs.set("to_date", params.toDate);
+  if (params?.view) qs.set("view", params.view);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return authedJson<GenerationsResponse>(`/teams/${teamId}/generations${suffix}`);
 }

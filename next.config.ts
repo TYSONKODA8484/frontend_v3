@@ -1,6 +1,26 @@
 import type { NextConfig } from "next";
 
+// Private, signed-in areas must never appear in search results.
+const NOINDEX_PATHS = ["/studio/:path*", "/auth/:path*", "/invite/:path*"];
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      ...NOINDEX_PATHS.map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      })),
+    ];
+  },
   experimental: {
     // Rewrites these barrel-file imports to direct module paths at build
     // time, so a page using one icon doesn't pull the whole icon package

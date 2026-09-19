@@ -1,5 +1,5 @@
-import { PlaceholderSlot } from "@/components/ui/PlaceholderSlot";
-import { steps } from "./HowItWorks.content";
+import { SlotImage } from "@/components/ui/SlotImage";
+import { steps } from "@/content/how-it-works";
 
 export function HowItWorks() {
   return (
@@ -15,7 +15,7 @@ export function HowItWorks() {
           {steps.map((s) => (
             <div key={s.n} className="flex flex-col gap-3.5">
               <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border">
-                <PlaceholderSlot label={s.placeholder} />
+                <SlotImage src={s.image} alt={s.alt} placeholder={s.placeholder} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" />
               </div>
               <div className="flex items-baseline gap-2.5">
                 <span className="font-mono text-sm text-accent">{s.n}</span>

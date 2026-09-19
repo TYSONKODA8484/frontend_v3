@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { audiences } from "./UseCases.content";
+import { audiences } from "@/content/use-cases";
 
 export function UseCases() {
   return (

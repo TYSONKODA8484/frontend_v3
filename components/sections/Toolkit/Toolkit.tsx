@@ -36,7 +36,7 @@ export function Toolkit({ tools }: { tools: Tool[] }) {
                     const soon = t.status !== "live";
                     return (
                       <div
-                        key={t.id}
+                        key={t.featureType}
                         className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent-dim"
                       >
                         <div className="flex items-center gap-2">
@@ -49,7 +49,7 @@ export function Toolkit({ tools }: { tools: Tool[] }) {
                             </span>
                           )}
                         </div>
-                        <span className="text-[13.5px] font-semibold">{t.name}</span>
+                        <span className="text-[13.5px] font-semibold">{t.displayName}</span>
                         <span className="text-xs leading-snug text-dim">{t.description}</span>
                       </div>
                     );

@@ -19,6 +19,25 @@ const RESOLUTION_MULTIPLIER: Record<string, number> = {
   "4k": 6,
 };
 
+/** True for tools whose per-image price is quality × resolution multipliers. */
+export const usesQualityPricing = (featureType: string) => QUALITY_RESOLUTION_MULTIPLIER_TOOLS.has(featureType);
+
+/** Credits per image for one quality at a resolution, or null if either is unknown. */
+export function creditsForQuality(quality: string, resolution: string): number | null {
+  const q = QUALITY_MULTIPLIER[quality];
+  const r = RESOLUTION_MULTIPLIER[resolution];
+  return q && r ? q * r : null;
+}
+
+/** How much a resolution costs relative to the cheapest one offered (1K = 1x). */
+export function resolutionMultipliers(values: string[]): Record<string, number> {
+  const known = values.map((v) => RESOLUTION_MULTIPLIER[v]).filter((m): m is number => m != null);
+  const base = Math.min(...known);
+  const out: Record<string, number> = {};
+  for (const v of values) if (RESOLUTION_MULTIPLIER[v] != null) out[v] = RESOLUTION_MULTIPLIER[v] / base;
+  return out;
+}
+
 /** Returns credits-per-image for the current field values, or null if it can't be determined. */
 export function estimateCreditsPerImage(
   featureType: string,

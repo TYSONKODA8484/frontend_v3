@@ -1,5 +1,5 @@
-import { PlaceholderSlot } from "@/components/ui/PlaceholderSlot";
-import { quotes } from "./Testimonials.content";
+import { SlotImage } from "@/components/ui/SlotImage";
+import { quotes } from "@/content/testimonials";
 
 export function Testimonials() {
   return (
@@ -23,7 +23,7 @@ export function Testimonials() {
               <p className="text-[14.5px] leading-relaxed">&ldquo;{q.text}&rdquo;</p>
               <div className="mt-auto flex items-center gap-2.5">
                 <div className="relative h-9 w-9 flex-none overflow-hidden rounded-full">
-                  <PlaceholderSlot label="Photo" />
+                  <SlotImage src={q.avatar} alt={`${q.name}, ${q.role.toLowerCase()}`} placeholder="Photo" sizes="36px" />
                 </div>
                 <span>
                   <span className="block text-[13px] font-semibold">{q.name}</span>

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CircleDollarSign, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import { CreditIcon } from "@/components/ui/CreditIcon";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
@@ -58,9 +59,9 @@ export function Navbar() {
       <div className="ml-auto flex items-center gap-4">
         <button
           onClick={() => openBuyModal()}
-          className="flex items-center gap-1.5 whitespace-nowrap border border-border-strong px-3.5 py-1.5 font-mono text-xs text-accent hover:border-accent"
+          className="credit-pill"
         >
-          <CircleDollarSign size={15} className="flex-none" />
+          <CreditIcon size={15} />
           {billingLoading ? "…" : `${billing?.totalCredits ?? 0} credits`}
         </button>
         <button

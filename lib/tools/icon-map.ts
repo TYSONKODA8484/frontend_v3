@@ -17,6 +17,7 @@ import {
   Clapperboard,
   Wand2,
   Sparkles,
+  SwatchBook,
   type LucideIcon,
 } from "lucide-react";
 import type { Tool } from "@/lib/types/tool";
@@ -37,6 +38,7 @@ const ICON_BY_SLUG: Record<string, LucideIcon> = {
   grid: LayoutGrid,
   layers: Layers,
   palette: Palette,
+  swatch: SwatchBook,
   folder: Folder,
   clapperboard: Clapperboard,
   wand: Wand2,
@@ -67,7 +69,7 @@ const ICON_BY_KEYWORD: [string, LucideIcon][] = [
 
 export function iconForTool(tool: Tool): LucideIcon {
   if (tool.icon && ICON_BY_SLUG[tool.icon]) return ICON_BY_SLUG[tool.icon];
-  const haystack = `${tool.name} ${tool.category}`.toLowerCase();
+  const haystack = `${tool.displayName} ${tool.category}`.toLowerCase();
   const match = ICON_BY_KEYWORD.find(([keyword]) => haystack.includes(keyword));
   return match ? match[1] : Sparkles;
 }

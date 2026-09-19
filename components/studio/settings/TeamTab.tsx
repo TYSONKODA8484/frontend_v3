@@ -48,6 +48,9 @@ export function TeamTab() {
     setActiveTeamId,
     renameTeam,
     createTeam,
+    deleteTeam,
+    deletedTeams,
+    restoreTeam,
   } = useTeam();
   const { say } = useToast();
 
@@ -64,6 +67,11 @@ export function TeamTab() {
   const [creatingOpen, setCreatingOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOwnerInvite, setConfirmOwnerInvite] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const isOwner = activeTeam?.role === "owner";
 
@@ -95,6 +103,26 @@ export function TeamTab() {
       say(friendlyCreateError(err));
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleDeleteTeam() {
+    if (!activeTeamId || !activeTeam) return;
+    setDeleting(true);
+    try {
+      const { recoverableUntil } = await deleteTeam(activeTeamId);
+      const until = new Date(recoverableUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      say(`Deleted ${activeTeam.name}. It can be recovered until ${until}.`);
+      setConfirmDelete(false);
+      setDeleteConfirmText("");
+    } catch (err) {
+      say(
+        err instanceof ApiError && err.status === 403
+          ? "Only the team owner can delete this team."
+          : "Couldn't delete the team.",
+      );
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -131,9 +159,31 @@ export function TeamTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeamId, isOwner]);
 
-  async function handleInvite() {
-    if (!activeTeamId) return;
+  async function handleRestore(id: string, name: string) {
+    setRestoringId(id);
+    try {
+      await restoreTeam(id);
+      say(`Restored ${name}. Its subscription doesn't resume — subscribe again once its credits run out.`);
+    } catch (err) {
+      say(
+        err instanceof ApiError && err.status === 400
+          ? "This team can't be restored any more."
+          : "Couldn't restore the team.",
+      );
+    } finally {
+      setRestoringId(null);
+    }
+  }
+
+  function handleInvite() {
     if (!inviteEmail || inviteEmail.indexOf("@") < 1) return say("Enter a valid email to invite");
+    if (inviteRole === "owner") setConfirmOwnerInvite(true);
+    else sendInvite();
+  }
+
+  async function sendInvite() {
+    if (!activeTeamId) return;
+    setConfirmOwnerInvite(false);
     setInviting(true);
     try {
       await inviteToTeam(activeTeamId, inviteEmail, inviteRole);
@@ -286,6 +336,8 @@ export function TeamTab() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="teammate@brandco.com"
+                  type="email"
+                  autoComplete="off"
                   className="w-full text-[13.5px]"
                 />
               </div>
@@ -295,7 +347,7 @@ export function TeamTab() {
                 className="border border-border bg-surface px-3 text-[13px] text-text"
               >
                 <option value="editor">Editor</option>
-                <option value="viewer">Viewer</option>
+                <option value="owner">Owner</option>
               </select>
               <button
                 onClick={handleInvite}
@@ -340,6 +392,135 @@ export function TeamTab() {
         </>
       ) : (
         <p className="text-[13px] text-dim">Only the team owner can invite teammates.</p>
+      )}
+
+      {isOwner && (
+        <div className="border-t border-border pt-[18px]">
+          <label className="font-mono text-[10.5px] tracking-wide text-dim">DANGER ZONE</label>
+          <div className="mt-2.5">
+            <button
+              onClick={() => {
+                setDeleteConfirmText("");
+                setConfirmDelete(true);
+              }}
+              className="rounded-full border border-[#ff5c4d] px-[18px] py-2.5 text-[13px] text-[#ff8a6b] hover:bg-[#ff5c4d]/10"
+            >
+              Delete team
+            </button>
+          </div>
+        </div>
+      )}
+
+      {deletedTeams.length > 0 && (
+        <div className="border-t border-border pt-[18px]">
+          <label className="font-mono text-[10.5px] tracking-wide text-dim">RECENTLY DELETED TEAMS</label>
+          <div className="mt-2.5 border border-border">
+            {deletedTeams.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center gap-3.5 border-b border-border px-4 py-3 text-[13px] last:border-b-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{t.name}</div>
+                  <div className="text-[11.5px] text-dim">
+                    Recoverable until{" "}
+                    {new Date(t.recoverableUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRestore(t.id, t.name)}
+                  disabled={restoringId === t.id}
+                  className="rounded-full border border-border-strong px-4 py-2 text-[12.5px] font-medium hover:border-accent disabled:opacity-60"
+                >
+                  {restoringId === t.id ? "Restoring…" : "Restore"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {confirmOwnerInvite && (
+        <div
+          onClick={() => setConfirmOwnerInvite(false)}
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-[420px] flex-col gap-3.5 border border-border-strong bg-bg p-7"
+          >
+            <div className="font-heading text-[17px] font-semibold">Invite {inviteEmail} as an owner?</div>
+            <p className="text-[13.5px] leading-relaxed text-muted">
+              Owners can delete the team, buy or cancel subscriptions, and invite or remove people. Any one owner
+              can delete the team without asking the others.
+            </p>
+            <div className="mt-1.5 flex gap-2.5">
+              <button
+                onClick={() => setConfirmOwnerInvite(false)}
+                className="flex-1 rounded-full border border-border-strong py-2.5 text-[13.5px] font-medium hover:border-accent"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendInvite}
+                className="flex-1 rounded-full bg-accent py-2.5 text-[13.5px] font-semibold text-accent-ink hover:bg-accent-hover"
+              >
+                Invite as owner
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && activeTeam && (
+        <div
+          onClick={() => !deleting && setConfirmDelete(false)}
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-[420px] flex-col gap-3.5 border border-border-strong bg-bg p-7"
+          >
+            <div className="font-heading text-[17px] font-semibold">Delete {activeTeam.name}?</div>
+            <p className="text-[13.5px] leading-relaxed text-muted">
+              The team will be removed immediately and its subscription cancelled. Every member loses access.
+              Nothing is erased for 15 days, so you can recover the team and its credits until then. A
+              recovered team needs a new subscription once its existing balance runs out.
+            </p>
+            {teams.length === 1 && (
+              <p className="border border-[#ff5c4d]/40 bg-[#ff5c4d]/10 px-3 py-2 text-[12.5px] leading-relaxed text-[#ff8a6b]">
+                This is your only team. After deleting it you won&apos;t have a workspace until you create a new
+                one or restore this one.
+              </p>
+            )}
+            <label className="flex flex-col gap-2 text-[12.5px] text-dim">
+              Type <span className="font-semibold text-text">{activeTeam.name}</span> to confirm
+              <input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                disabled={deleting}
+                autoFocus
+                className="border border-border bg-surface px-3 py-2.5 text-[13.5px] text-text focus:border-[#ff5c4d]"
+              />
+            </label>
+            <div className="mt-1.5 flex gap-2.5">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="flex-1 rounded-full border border-border-strong py-2.5 text-[13.5px] font-medium hover:border-accent disabled:opacity-60"
+              >
+                Keep team
+              </button>
+              <button
+                onClick={handleDeleteTeam}
+                disabled={deleting || deleteConfirmText.trim() !== activeTeam.name}
+                className="flex-1 rounded-full border border-[#ff5c4d] py-2.5 text-[13.5px] text-[#ff8a6b] hover:bg-[#ff5c4d]/10 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {deleting ? "Deleting…" : "Delete team"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -4,12 +4,29 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
-import { navItems } from "./Header.nav-items";
+import { navItems, type NavItem } from "@/content/header-nav";
 import { HeaderAuthArea } from "./Header.AuthArea";
+import { useLiveTools } from "./useLiveTools";
 
 export function Header() {
   const [openNav, setOpenNav] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const liveTools = useLiveTools();
+
+  // The Tools dropdown lists the live tools from the catalog, not marketing copy.
+  const items: NavItem[] = navItems.map((n) =>
+    n.id === "tools" && liveTools
+      ? {
+          ...n,
+          items: liveTools.map((t) => ({
+            name: t.displayName,
+            desc: t.description ?? "",
+            href: "/#tools",
+            badge: null,
+          })),
+        }
+      : n,
+  );
 
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
@@ -30,7 +47,7 @@ export function Header() {
 
         <nav ref={navRef} className="hidden min-w-0 flex-1 justify-center lg:flex">
           <div className="flex items-center gap-1 rounded-full border border-border bg-surface p-1.5">
-            {navItems.map((n) => {
+            {items.map((n) => {
               const isOpen = openNav === n.id && !!n.items;
               return (
                 <div key={n.id} className="relative">

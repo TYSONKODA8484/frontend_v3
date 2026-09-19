@@ -2,14 +2,47 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { CreditIcon } from "@/components/ui/CreditIcon";
 
-export type SettingsRowOption = { value: string; label: string; badge?: string };
+export type SettingsRowOption = {
+  value: string;
+  label: string;
+  badge?: string;
+  /** A price, drawn with the credit icon. Prefer this over `badge` for costs. */
+  credits?: number;
+  /** Relative price, e.g. 2 = "2x" the base — shown with the credit icon. */
+  multiplier?: number;
+};
+
+const fmtMultiplier = (m: number) => `${Number.isInteger(m) ? m : m.toFixed(1)}x`;
+
+function CostTag({ credits, badge, multiplier }: { credits?: number; badge?: string; multiplier?: number }) {
+  if (multiplier != null) {
+    return (
+      <span className="credit-tag">
+        <CreditIcon size={11} />
+        {fmtMultiplier(multiplier)}
+      </span>
+    );
+  }
+  if (credits != null) {
+    return (
+      <span className="credit-tag">
+        <CreditIcon size={11} />
+        {credits}
+      </span>
+    );
+  }
+  return badge ? <span className="credit-tag">{badge}</span> : null;
+}
 
 export function SettingsRow({
   label,
   currentValue,
   currentLabel,
   currentBadge,
+  currentCredits,
+  currentMultiplier,
   options,
   onSelect,
 }: {
@@ -17,6 +50,8 @@ export function SettingsRow({
   currentValue: string;
   currentLabel: string;
   currentBadge?: string;
+  currentCredits?: number;
+  currentMultiplier?: number;
   options: SettingsRowOption[];
   onSelect: (value: string) => void;
 }) {
@@ -40,11 +75,7 @@ export function SettingsRow({
         <span className="text-[13px] font-medium">{label}</span>
         <span className="flex items-center gap-2 text-[13px] text-muted">
           {currentLabel}
-          {currentBadge && (
-            <span className="rounded-[5px] border border-border-strong bg-surface-2 px-1.5 py-0.5 text-[11px] text-text">
-              {currentBadge}
-            </span>
-          )}
+          <CostTag credits={currentCredits} badge={currentBadge} multiplier={currentMultiplier} />
           <ChevronDown size={13} className="text-dim" />
         </span>
       </button>
@@ -63,11 +94,7 @@ export function SettingsRow({
               }`}
             >
               {opt.label}
-              {opt.badge && (
-                <span className="rounded-[5px] border border-border-strong bg-surface-2 px-1.5 py-0.5 text-[11px]">
-                  {opt.badge}
-                </span>
-              )}
+              <CostTag credits={opt.credits} badge={opt.badge} multiplier={opt.multiplier} />
             </button>
           ))}
         </div>

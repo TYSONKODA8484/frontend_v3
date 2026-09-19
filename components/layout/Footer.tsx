@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { siteConfig, socialLabels, type SocialPlatform } from "@/lib/config/site";
-import { footerCols, seoTags } from "./Footer.content";
+import { footerCols, seoTags } from "@/content/footer";
 import { socialIcons } from "./Footer.social-icons";
 
 const activeSocials = Object.entries(siteConfig.social) as [SocialPlatform, string][];
@@ -26,6 +26,8 @@ export function Footer() {
                   <a
                     key={platform}
                     href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={socialLabels[platform]}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-strong text-muted hover:border-accent hover:text-accent"
                   >

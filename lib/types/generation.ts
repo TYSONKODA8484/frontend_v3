@@ -11,6 +11,7 @@ export type Generation = {
   batchId: string;
   title: string;
   featureType: string;
+  userId?: string; // who ran it, if the backend includes it
   status: GenerationStatus;
   createdAt: string;
   outputUrl: string | null;

@@ -1,4 +1,5 @@
 import { authedFetch, authedJson, ApiError } from "@/lib/api/authed-fetch";
+import { readCache, writeCache } from "@/lib/studio/session-cache";
 import type { BatchResponse, GenerateJob, GenerateResponse, ModelPreset, ToolSchema } from "@/lib/types/generate";
 
 // Same schema for every user of a given feature_type — cache in memory per
@@ -8,11 +9,20 @@ import type { BatchResponse, GenerateJob, GenerateResponse, ModelPreset, ToolSch
 // rather than relying on the fetch layer.
 const schemaCache = new Map<string, ToolSchema>();
 
+const schemaStorageKey = (featureType: string) => `schema:${featureType}`;
+
+/** Synchronous read of a schema seen earlier (this tab, or earlier in the
+ * session), so a tool page can render its form on the very first paint. */
+export function getCachedToolSchema(featureType: string): ToolSchema | null {
+  return schemaCache.get(featureType) ?? readCache<ToolSchema>(schemaStorageKey(featureType));
+}
+
+// Always resolves from the network (so callers can silently revalidate what
+// they painted from cache) and refreshes both caches.
 export async function getToolSchema(featureType: string): Promise<ToolSchema> {
-  const cached = schemaCache.get(featureType);
-  if (cached) return cached;
   const schema = await authedJson<ToolSchema>(`/tools/${featureType}/schema`);
   schemaCache.set(featureType, schema);
+  writeCache(schemaStorageKey(featureType), schema);
   return schema;
 }
 
@@ -33,6 +43,14 @@ export function getBatch(batchId: string) {
   return authedJson<BatchResponse>(`/batches/${batchId}`);
 }
 
-export function getModelPresets() {
-  return authedJson<{ presets: ModelPreset[] }>("/model-presets");
+const PRESETS_KEY = "model-presets";
+
+export function getCachedModelPresets(): ModelPreset[] | null {
+  return readCache<ModelPreset[]>(PRESETS_KEY);
+}
+
+export async function getModelPresets() {
+  const res = await authedJson<{ presets: ModelPreset[] }>("/model-presets");
+  writeCache(PRESETS_KEY, res.presets);
+  return res;
 }

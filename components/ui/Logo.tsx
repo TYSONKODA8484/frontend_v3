@@ -1,12 +1,12 @@
+import { BrandMark } from "@/lib/config/brand-mark";
 import { siteConfig } from "@/lib/config/site";
 
+/** The ShootPX aperture mark — the same artwork as app/icon.svg. */
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 28 28" className="flex-none">
-      <rect width="28" height="28" rx="7" fill="var(--color-accent)" />
-      <circle cx="14" cy="14" r="6.4" fill="none" stroke="var(--color-accent-ink)" strokeWidth="2.6" />
-      <circle cx="14" cy="14" r="1.8" fill="var(--color-accent-ink)" />
-    </svg>
+    <span className="flex flex-none">
+      <BrandMark size={size} />
+    </span>
   );
 }
 

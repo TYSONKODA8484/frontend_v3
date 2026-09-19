@@ -9,6 +9,8 @@ export const pillars = [
       "Marketplace export presets for Shopify, Amazon and Etsy",
     ],
     placeholder: "Photoshoot editor / result grid",
+    image: "/home/shoot.webp",
+    alt: "The ShootPX photoshoot editor with a grid of results",
     imageFirst: false,
   },
   {
@@ -21,6 +23,8 @@ export const pillars = [
       "9:16, 1:1 and 16:9 exports with burned-in captions",
     ],
     placeholder: "Product motion clip still",
+    image: "/home/fly.webp",
+    alt: "A still from a product motion clip",
     imageFirst: true,
   },
   {
@@ -33,6 +37,8 @@ export const pillars = [
       "One script across five actors for fast A/B testing",
     ],
     placeholder: "UGC ad preview 9:16",
+    image: "/home/ugc.webp",
+    alt: "A vertical UGC-style ad preview",
     imageFirst: false,
   },
 ];

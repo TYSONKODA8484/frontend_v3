@@ -1,4 +1,4 @@
-import type { Tool } from "@/lib/types/tool";
+import { categoryRank, type Tool } from "@/lib/types/tool";
 
 export function titleCase(value: string) {
   return value
@@ -15,7 +15,7 @@ export function groupToolsByCategory(tools: Tool[]): Map<string, Tool[]> {
     groups.get(key)!.push(tool);
   }
   for (const list of groups.values()) {
-    list.sort((a, b) => a.sortOrder - b.sortOrder);
+    list.sort((a, b) => a.cardSortOrder - b.cardSortOrder);
   }
-  return groups;
+  return new Map([...groups.entries()].sort(([a], [b]) => categoryRank(a) - categoryRank(b)));
 }

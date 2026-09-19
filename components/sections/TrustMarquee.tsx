@@ -1,4 +1,4 @@
-import { marqueeItems } from "./TrustMarquee.content";
+import { marqueeItems } from "@/content/trust-marquee";
 
 export function TrustMarquee() {
   return (

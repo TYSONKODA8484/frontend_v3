@@ -2,43 +2,63 @@
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { getToolSchema, generate } from "@/lib/api/generate";
+import { getCachedToolSchema, getToolSchema, generate } from "@/lib/api/generate";
 import { ApiError } from "@/lib/api/authed-fetch";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { useTeamBilling } from "@/lib/studio/TeamBillingContext";
 import { useToast } from "@/lib/studio/ToastContext";
 import { ToolForm } from "@/components/studio/generate/ToolForm";
-import { GenerationRun } from "@/components/studio/generate/GenerationRun";
-import { EmptyResults } from "@/components/studio/generate/EmptyResults";
+import { GenerationResults } from "@/components/studio/generate/results/GenerationResults";
+import { ModelShootFlow } from "@/components/studio/generate/model-shoot/ModelShootFlow";
+import { hasPendingInputs, takePendingInputs } from "@/lib/studio/send-to-store";
+import { urlsToFiles } from "@/lib/tools/download";
 import type { GenerateResponse, ToolSchema } from "@/lib/types/generate";
-
-// model_shoot uses grouped image fields (model_image/top_images/etc), not the
-// generic images[] every other tool uses — its dedicated flow isn't built yet.
-const UNSUPPORTED_FEATURE_TYPES = new Set(["model_shoot"]);
 
 export function ToolGenerateClient({ featureType, isLive }: { featureType: string; isLive: boolean }) {
   const { activeTeamId } = useTeam();
   const { refetch: refetchBilling } = useTeamBilling();
   const { say } = useToast();
 
-  const [schema, setSchema] = useState<ToolSchema | null>(null);
+  // Paint from the last-seen schema immediately (it barely ever changes) and
+  // revalidate quietly below, so coming back to a tool never shows a spinner.
+  const [schema, setSchema] = useState<ToolSchema | null>(() => (isLive ? getCachedToolSchema(featureType) : null));
   // Not live in the catalog — known synchronously from the prop, so there's
   // nothing to load and no schema fetch ever fires (this is the actual
   // access gate; the catalog page just hides the link).
-  const [schemaLoading, setSchemaLoading] = useState(isLive);
+  const [schemaLoading, setSchemaLoading] = useState(() => isLive && !getCachedToolSchema(featureType));
   const [schemaError, setSchemaError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [run, setRun] = useState<GenerateResponse | null>(null);
+  // The backend allows one generation per user at a time.
+  const [running, setRunning] = useState(false);
+  // Boxes to show from the instant Generate is hit, before the server replies.
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  // Images sent here from another tool's results ("Send to…"). They're
+  // downloaded back into Files before the form mounts, so it can start with
+  // them already added.
+  const [awaitingInputs, setAwaitingInputs] = useState(() => hasPendingInputs(featureType));
+  const [incoming, setIncoming] = useState<File[]>([]);
+
+  useEffect(() => {
+    const urls = takePendingInputs(featureType);
+    if (!urls) return;
+    urlsToFiles(urls)
+      .then((files) => {
+        setIncoming(files);
+        if (files.length < urls.length) say("Some images couldn't be loaded from the other tool.");
+      })
+      .finally(() => setAwaitingInputs(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mount
+  }, []);
 
   useEffect(() => {
     if (!isLive) return;
-    // Fetching the schema when the tool changes is exactly what this effect
-    // is for; the lint rule flags the loading-flag set that precedes it.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSchemaLoading(true);
+    // The initial state already covers the cached (no spinner) and uncached
+    // (spinner) cases, so this only revalidates against the network.
     getToolSchema(featureType)
       .then(setSchema)
       .catch((err) => {
+        if (getCachedToolSchema(featureType)) return; // keep showing what we have
         setSchemaError(
           err instanceof ApiError && err.status === 404
             ? "This tool isn't available yet."
@@ -48,16 +68,21 @@ export function ToolGenerateClient({ featureType, isLive }: { featureType: strin
       .finally(() => setSchemaLoading(false));
   }, [featureType, isLive]);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(formData: FormData, expectedCount: number) {
+    if (running) return; // one generation at a time — Generate is disabled until it settles
     if (!activeTeamId) {
       say("No active team found");
       return;
     }
     formData.append("team_id", activeTeamId);
     setSubmitting(true);
+    setPendingCount(expectedCount);
     try {
       const res = await generate(formData);
       setRun(res);
+      // Same tick as the run itself, so Generate never flashes enabled between
+      // the server answering and the results panel taking over.
+      setRunning(true);
       // Credits are held/granted at submission — reflect that immediately
       // rather than waiting for the next background billing poll.
       refetchBilling();
@@ -78,6 +103,7 @@ export function ToolGenerateClient({ featureType, isLive }: { featureType: strin
         say("Couldn't start generation. Please try again.");
       }
     } finally {
+      setPendingCount(null);
       setSubmitting(false);
     }
   }
@@ -91,7 +117,7 @@ export function ToolGenerateClient({ featureType, isLive }: { featureType: strin
     );
   }
 
-  if (schemaLoading) {
+  if (schemaLoading || awaitingInputs) {
     return (
       <div className="flex h-full items-center justify-center text-dim">
         <Loader2 className="animate-spin" size={24} />
@@ -99,12 +125,12 @@ export function ToolGenerateClient({ featureType, isLive }: { featureType: strin
     );
   }
 
-  if (schemaError || !schema || UNSUPPORTED_FEATURE_TYPES.has(schema.featureType)) {
+  if (schemaError || !schema) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 px-11 text-center text-dim">
         <span className="text-3xl opacity-50">▢</span>
         <span className="text-[15px] font-semibold text-muted">
-          {schemaError || "This tool's flow isn't built yet."}
+          {schemaError || "This tool isn't available yet."}
         </span>
       </div>
     );
@@ -112,21 +138,30 @@ export function ToolGenerateClient({ featureType, isLive }: { featureType: strin
 
   return (
     <div className="flex h-full">
-      <ToolForm schema={schema} onSubmit={handleSubmit} submitting={submitting} />
+      {schema.featureType === "model_shoot" ? (
+        <ModelShootFlow
+          schema={schema}
+          running={running}
+          initialGarments={incoming}
+          onSubmitting={setPendingCount}
+          onStarted={(res) => {
+            setRun(res);
+            setRunning(true);
+            // Credits are held at submission — reflect that right away.
+            refetchBilling();
+          }}
+        />
+      ) : (
+        <ToolForm
+          schema={schema}
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          running={running}
+          initialImages={incoming}
+        />
+      )}
       <div className="flex-1 overflow-auto">
-        {run ? (
-          <GenerationRun
-            key={run.batchId}
-            batchId={run.batchId}
-            initialJobs={run.jobs}
-            grantedCount={run.grantedCount}
-            requestedCount={run.requestedCount}
-            partial={run.partial}
-            featureType={schema.featureType}
-          />
-        ) : (
-          <EmptyResults />
-        )}
+        <GenerationResults featureType={schema.featureType} run={run} pendingCount={pendingCount} onRunningChange={setRunning} />
       </div>
     </div>
   );

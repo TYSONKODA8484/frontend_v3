@@ -10,12 +10,14 @@ export function ImageDropzone({
   files,
   onChange,
   maxFiles,
-  label = "Drop images or",
+  label = "Drop a file or",
+  hint,
 }: {
   files: File[];
   onChange: (files: File[]) => void;
   maxFiles: number;
   label?: string;
+  hint?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -75,13 +77,13 @@ export function ImageDropzone({
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`flex cursor-pointer items-center justify-center gap-2 border-2 border-dashed px-4 py-4 ${
+        className={`flex cursor-pointer items-center justify-center gap-2 border-[1.5px] border-dashed px-4 py-4 ${
           dragging ? "border-accent bg-accent/5" : "border-border-strong hover:border-accent"
         }`}
       >
         <Upload size={16} className="text-dim" />
         <span className="text-[13.5px] text-muted">
-          {label} <span className="text-accent">select images</span>
+          {label} <span className="text-accent">select an image</span>
         </span>
         <input
           ref={inputRef}
@@ -98,7 +100,7 @@ export function ImageDropzone({
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {files.map((f, i) => (
-            <div key={`${f.name}-${i}`} className="group relative h-16 w-16 flex-none overflow-hidden border border-border">
+            <div key={`${f.name}-${i}`} className="group relative h-[66px] w-[66px] flex-none overflow-hidden border border-border">
               {/* eslint-disable-next-line @next/next/no-img-element -- transient local blob preview, not worth next/image's overhead */}
               <img src={previewUrls[i]} alt={f.name} className="h-full w-full object-cover" />
               <button
@@ -113,9 +115,7 @@ export function ImageDropzone({
         </div>
       )}
 
-      <span className="text-[11px] text-dim">
-        {files.length}/{maxFiles} images · PNG, JPEG or WEBP, up to 10MB each
-      </span>
+      {hint && <span className="text-[11px] text-dim">{hint}</span>}
     </div>
   );
 }

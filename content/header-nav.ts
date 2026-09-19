@@ -29,10 +29,10 @@ export const navItems: NavItem[] = [
     label: "Tools",
     href: "#tools",
     items: [
-      { name: "Background Swap", desc: "One-click cutout and scene replacement", href: "#tools" },
-      { name: "Mockup Studio", desc: "Apparel, packaging and device mockups", href: "#tools" },
-      { name: "On-Model Shots", desc: "AI models and ghost mannequin renders", href: "#tools" },
-      { name: "Finishing suite", desc: "Erase, relight, upscale 4K, outpaint", href: "#tools" },
+      { name: "Product Listing", desc: "Create professional product listing images", href: "/#tools" },
+      { name: "Creative", desc: "Turn product photos into creative visuals", href: "/#tools" },
+      { name: "Recolor", desc: "Create product color variants", href: "/#tools" },
+      { name: "Model Shoot", desc: "Show products on AI-generated models", href: "/#tools" },
     ],
   },
   {

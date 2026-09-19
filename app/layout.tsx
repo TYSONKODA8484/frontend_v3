@@ -1,6 +1,8 @@
 import { Outfit, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { siteMetadata } from "@/lib/seo/metadata";
 import { buildJsonLd } from "@/lib/seo/json-ld";
+import type { Viewport } from "next";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import "./globals.css";
 
@@ -23,6 +25,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata = siteMetadata;
+export const viewport: Viewport = { themeColor: "#000000" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -35,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-bg text-text">
         <AuthProvider>{children}</AuthProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );

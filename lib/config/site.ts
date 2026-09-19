@@ -8,16 +8,25 @@ export const socialLabels: Record<SocialPlatform, string> = {
 };
 
 /**
- * Add a platform here (with its live profile URL) to make it appear in the
- * footer and in the Organization JSON-LD `sameAs` list. Remove a line to
- * take it down everywhere at once. No other file needs to change.
+ * Social profiles — edit the URLs here. A platform with a URL appears in the
+ * footer and in the Organization JSON-LD `sameAs` list; leave it "" to hide it
+ * everywhere. No other file needs to change.
  */
+const socialUrls: Record<SocialPlatform, string> = {
+  twitter: "",
+  instagram: "https://www.instagram.com/shootpx_labs",
+  linkedin: "",
+  youtube: "",
+};
+
+const activeSocial = Object.fromEntries(
+  Object.entries(socialUrls).filter(([, url]) => url.trim() !== ""),
+) as Partial<Record<SocialPlatform, string>>;
+
 export const siteConfig = {
   name: "ShootPX",
   url: "https://shootpx.com",
   contactEmail: "hello@shootpx.com",
   supportEmail: "shootpxlabs@gmail.com",
-  social: {
-    instagram: "https://instagram.com/shootpx",
-  } satisfies Partial<Record<SocialPlatform, string>>,
+  social: activeSocial,
 };

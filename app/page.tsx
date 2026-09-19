@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { siteConfig } from "@/lib/config/site";
+import { withComingSoon } from "@/content/coming-soon-tools";
 import { getTools } from "@/lib/api/tools";
 import { getBilling } from "@/lib/api/billing";
 import { HomeAuthRedirect } from "@/components/HomeAuthRedirect";
@@ -15,6 +18,9 @@ import { Pricing } from "@/components/sections/Pricing/Pricing";
 import { Faq } from "@/components/sections/Faq";
 import { CtaSignup } from "@/components/sections/CtaSignup";
 
+// The landing page is the canonical "/"; other pages set their own.
+export const metadata: Metadata = { alternates: { canonical: `${siteConfig.url}/` } };
+
 export default async function Home() {
   const [tools, billing] = await Promise.all([getTools(), getBilling()]);
 
@@ -27,7 +33,8 @@ export default async function Home() {
         <TrustMarquee />
         <Outcomes />
         <Platform />
-        <Toolkit tools={tools.tools} />
+        {/* Landing shows live tools plus the SOON teasers; the studio lists live only. */}
+        <Toolkit tools={withComingSoon(tools.tools)} />
         <HowItWorks />
         <UseCases />
         <Testimonials />

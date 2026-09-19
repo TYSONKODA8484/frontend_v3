@@ -2,8 +2,15 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { createTeam as createTeamApi, getMyTeams, renameTeam as renameTeamApi } from "@/lib/api/teams";
+import {
+  createTeam as createTeamApi,
+  deleteTeam as deleteTeamApi,
+  getMyTeams,
+  renameTeam as renameTeamApi,
+  restoreTeam as restoreTeamApi,
+} from "@/lib/api/teams";
 import { readCache, writeCache } from "@/lib/studio/session-cache";
+import { readDeletedTeams, writeDeletedTeams, type DeletedTeam } from "@/lib/studio/deleted-teams";
 import type { MyTeam } from "@/lib/types/team";
 
 const ACTIVE_TEAM_STORAGE_KEY = "shootpx:active-team-id";
@@ -32,6 +39,9 @@ type TeamContextValue = {
   refetchTeams: () => void;
   renameTeam: (id: string, name: string) => Promise<void>;
   createTeam: (name: string) => Promise<MyTeam>;
+  deleteTeam: (id: string) => Promise<{ recoverableUntil: string }>;
+  deletedTeams: DeletedTeam[];
+  restoreTeam: (id: string) => Promise<void>;
 };
 
 const TeamContext = createContext<TeamContextValue | null>(null);
@@ -47,6 +57,12 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     return pickActiveId(cached);
   });
   const [loading, setLoading] = useState(() => readCache<MyTeam[]>(TEAMS_CACHE_KEY) == null);
+
+  const [deletedTeams, setDeletedTeams] = useState<DeletedTeam[]>([]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount
+    setDeletedTeams(readDeletedTeams());
+  }, []);
 
   function load() {
     // Only needs a valid Firebase ID token, not the backend profile — fetch
@@ -93,6 +109,37 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     return newTeam;
   }
 
+  async function deleteTeam(id: string) {
+    const res = await deleteTeamApi(id);
+    const gone = teams.find((t) => t.id === id);
+    if (gone) {
+      const next = [...deletedTeams, { id, name: gone.name, recoverableUntil: res.recoverableUntil }];
+      setDeletedTeams(next);
+      writeDeletedTeams(next);
+    }
+    const remaining = teams.filter((t) => t.id !== id);
+    setTeams(remaining);
+    writeCache(TEAMS_CACHE_KEY, remaining);
+    if (activeTeamId === id) {
+      if (remaining[0]) setActiveTeamId(remaining[0].id);
+      else setActiveTeamIdState(null); // that was the last team
+    }
+    return { recoverableUntil: res.recoverableUntil };
+  }
+
+  async function restoreTeam(id: string) {
+    await restoreTeamApi(id);
+    const next = deletedTeams.filter((t) => t.id !== id);
+    setDeletedTeams(next);
+    writeDeletedTeams(next);
+    // Refetch so the restored team returns to the list, then switch to it.
+    const { teams: fetched } = await getMyTeams();
+    setTeams(fetched);
+    writeCache(TEAMS_CACHE_KEY, fetched);
+    if (fetched.some((t) => t.id === id)) setActiveTeamId(id);
+    else setActiveTeamIdState(pickActiveId(fetched));
+  }
+
   return (
     <TeamContext.Provider
       value={{
@@ -104,6 +151,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         refetchTeams: load,
         renameTeam,
         createTeam,
+        deleteTeam,
+        deletedTeams,
+        restoreTeam,
       }}
     >
       {children}

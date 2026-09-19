@@ -3,16 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { useTeam } from "@/lib/studio/TeamContext";
 import { getTeamGenerations } from "@/lib/api/teams";
+import { onGenerationsChanged } from "@/lib/studio/generation-events";
 import { readCache, writeCache } from "@/lib/studio/session-cache";
 import { dedupeByJobId } from "@/lib/tools/dedupe-generations";
 import type { Generation } from "@/lib/types/generation";
 
 const RECENT_LIMIT = 8;
 
-function recentCacheKey(teamId: string) {
-  return `recent:${teamId}`;
+function recentCacheKey(teamId: string, userId: string) {
+  return `recent:${teamId}:${userId}`;
 }
 
 function titleCaseSlug(slug: string) {
@@ -24,30 +26,34 @@ function titleCaseSlug(slug: string) {
 
 export function RecentWork() {
   const { activeTeamId, loading: teamsLoading } = useTeam();
+  const { firebaseUser, profile } = useAuth();
+  const userId = profile?.id ?? null;
   // Hydrate from last session's cache so a reload shows the previous
   // thumbnails immediately instead of a loading state.
   const [items, setItems] = useState<Generation[]>(() =>
-    dedupeByJobId((activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))) || []),
+    dedupeByJobId((activeTeamId && userId && readCache<Generation[]>(recentCacheKey(activeTeamId, userId))) || []),
   );
   const [itemsLoading, setItemsLoading] = useState(
-    () => !(activeTeamId && readCache<Generation[]>(recentCacheKey(activeTeamId))),
+    () => !(activeTeamId && userId && readCache<Generation[]>(recentCacheKey(activeTeamId, userId))),
   );
 
   function load() {
-    if (!activeTeamId) {
-      // Teams may still be loading and activeTeamId just hasn't arrived
-      // yet — not "no projects". Folded into `loading` below.
+    if (!activeTeamId || !userId) {
+      // Teams or the profile may still be loading — not "no projects".
+      // Folded into `loading` below.
       setItems([]);
       setItemsLoading(false);
       return;
     }
-    const cached = readCache<Generation[]>(recentCacheKey(activeTeamId));
+    const cacheKey = recentCacheKey(activeTeamId, userId);
+    const cached = readCache<Generation[]>(cacheKey);
     if (cached) setItems(dedupeByJobId(cached));
     else setItemsLoading(true);
-    getTeamGenerations(activeTeamId, { limit: RECENT_LIMIT })
+    // The user's own finished outputs only; internal tools are excluded server-side.
+    getTeamGenerations(activeTeamId, { limit: RECENT_LIMIT, userId, status: "completed" })
       .then((r) => {
         setItems(dedupeByJobId(r.generations));
-        writeCache(recentCacheKey(activeTeamId), r.generations);
+        writeCache(cacheKey, r.generations);
       })
       .catch(() => {
         // Keep whatever we already have rather than blanking the grid out.
@@ -59,9 +65,31 @@ export function RecentWork() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching recent generations when the active team changes
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTeamId]);
+  }, [activeTeamId, userId]);
 
-  const loading = teamsLoading || itemsLoading;
+  // Keep the strip current while Home stays open: refresh when a generation
+  // finishes anywhere in the app, when the tab regains focus (e.g. a shoot
+  // finished while you were elsewhere), and on a slow timer for jobs that end
+  // in the background.
+  useEffect(() => {
+    if (!activeTeamId || !userId) return;
+    const refresh = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    const unsubscribe = onGenerationsChanged(refresh);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    const timer = setInterval(refresh, 30_000);
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load() closes over activeTeamId/userId, which this effect is keyed on
+  }, [activeTeamId, userId]);
+
+  const loading = teamsLoading || itemsLoading || (!userId && !!firebaseUser);
 
   return (
     <div className="flex flex-col gap-2.5 px-11 py-7">

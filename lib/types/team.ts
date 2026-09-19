@@ -1,8 +1,7 @@
-export type TeamRole = "owner" | "editor" | "viewer";
-// Invites can only ever create editor/viewer members — the backend rejects
-// "owner" on POST /teams/{id}/invite with a 422 (there's exactly one owner
-// per team, set at creation).
-export type InviteRole = "editor" | "viewer";
+// Teams have exactly two roles. A team can have several owners; the last
+// owner can't be removed.
+export type TeamRole = "owner" | "editor";
+export type InviteRole = TeamRole;
 
 export type MyTeam = {
   id: string;

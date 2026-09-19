@@ -6,12 +6,27 @@ import { CheckCircle2 } from "lucide-react";
 export function CtaSignup() {
   const [email, setEmail] = useState("");
   const [signedUp, setSignedUp] = useState(false);
-  const [waitlistNumber, setWaitlistNumber] = useState(0);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  function signUp() {
-    if (email && email.indexOf("@") > 0) {
-      setWaitlistNumber(1200 + Math.floor(Math.random() * 300));
-      setSignedUp(true);
+  async function signUp() {
+    if (sending) return;
+    if (!email || email.indexOf("@") < 1) return setError("Enter a valid email address.");
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) setError(data.error ?? "Couldn't save your email. Please try again.");
+      else setSignedUp(true);
+    } catch {
+      setError("Couldn't save your email. Please try again.");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -30,25 +45,30 @@ export function CtaSignup() {
         {signedUp ? (
           <div className="flex items-center gap-2 rounded-full border border-accent px-6 py-3 font-mono text-[13px] text-accent">
             <CheckCircle2 size={16} />
-            YOU&apos;RE ON THE LIST — #{waitlistNumber}
+            YOU&apos;RE ON THE LIST
           </div>
         ) : (
           <div className="flex w-full max-w-[440px] items-center gap-2 rounded-full border border-border-strong bg-surface p-1.5 pl-5">
             <input
+              type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && signUp()}
               placeholder="you@brand.com"
               aria-label="Work email"
               className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-dim"
             />
             <button
               onClick={signUp}
-              className="whitespace-nowrap rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover"
+              disabled={sending}
+              className="whitespace-nowrap rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
             >
-              Get started
+              {sending ? "Sending…" : "Get started"}
             </button>
           </div>
         )}
+        {error && <p className="text-[13px] text-[#ff8a6b]">{error}</p>}
       </div>
     </section>
   );

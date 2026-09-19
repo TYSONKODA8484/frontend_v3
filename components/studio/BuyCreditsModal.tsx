@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, Lock } from "lucide-react";
+import { CreditIcon } from "@/components/ui/CreditIcon";
 import { getBilling } from "@/lib/api/billing";
-import { checkoutCreditPack, checkoutSubscription } from "@/lib/api/checkout";
+import { apiErrorDetail } from "@/lib/api/authed-fetch";
+import { checkoutCreditPack, checkoutSubscription, switchSubscription } from "@/lib/api/checkout";
 import { loadRazorpayCheckout, openRazorpayCheckout } from "@/lib/razorpay/checkout";
 import type { BillingPlan, BillingResponse } from "@/lib/types/billing";
 import { useTeam } from "@/lib/studio/TeamContext";
@@ -73,9 +75,26 @@ export function BuyCreditsModal() {
 
   if (!buyModalOpen) return null;
 
+  const currentKey = teamBilling?.plan?.toLowerCase();
+  const matchesTeamPlan = (p: BillingPlan) =>
+    tab === "sub" && !!currentKey && (p.slug.toLowerCase() === currentKey || p.name.toLowerCase() === currentKey);
+  // A subscription that was started but never paid (checkout closed) has a
+  // plan on the team but is not "active" — it must not look like a plan they own.
+  const subActive = teamBilling?.subscriptionStatus?.toLowerCase() === "active";
+  const isCurrentPlan = (p: BillingPlan) => matchesTeamPlan(p) && subActive;
+  const isPendingPlan = (p: BillingPlan) => matchesTeamPlan(p) && !subActive;
+
   const plans = (tab === "sub" ? billing.subscriptions : billing.credits)
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  // Once a team is subscribed, "best value" styling is dropped: the only card
+  // that should stand out is the one they already own, and it must read as
+  // "already yours", not as the recommended thing to click.
+  const ownsPlan = plans.some(isCurrentPlan);
+  const renews = teamBilling?.currentPeriodEnd
+    ? new Date(teamBilling.currentPeriodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : null;
 
   async function handleBuy(plan: BillingPlan) {
     if (!activeTeamId || !isOwner || buyingId) return;
@@ -100,7 +119,11 @@ export function BuyCreditsModal() {
           modal: { ondismiss: () => say("Checkout cancelled") },
         });
       } else {
-        const checkout = await checkoutSubscription(activeTeamId, plan.id);
+        // Changing plans on an active subscription goes through /switch; the
+        // plain checkout is only for teams without one.
+        const checkout = subActive
+          ? await switchSubscription(activeTeamId, plan.id)
+          : await checkoutSubscription(activeTeamId, plan.id);
         openRazorpayCheckout({
           key: checkout.key_id,
           subscription_id: checkout.razorpay_subscription_id,
@@ -116,7 +139,7 @@ export function BuyCreditsModal() {
         });
       }
     } catch (err) {
-      say(err instanceof Error ? err.message : "Couldn't start checkout. Please try again.");
+      say(apiErrorDetail(err, "Couldn't start checkout. Please try again."));
     } finally {
       setBuyingId(null);
     }
@@ -132,7 +155,7 @@ export function BuyCreditsModal() {
         <X size={20} />
       </button>
 
-      <div className="mx-auto flex max-w-4xl flex-col items-center gap-3.5 px-6 py-20">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-3.5 px-6 py-20">
         <h2 className="text-center font-heading text-[clamp(32px,4.4vw,48px)] font-bold tracking-tight">
           More credits, more shoots.
         </h2>
@@ -161,7 +184,7 @@ export function BuyCreditsModal() {
               tab === "credits" ? "bg-accent text-accent-ink" : "text-muted"
             }`}
           >
-            One-time
+            Credits
           </button>
         </div>
 
@@ -170,50 +193,98 @@ export function BuyCreditsModal() {
         ) : plans.length === 0 ? (
           <p className="mt-10 text-sm text-dim">Couldn&apos;t load plans right now.</p>
         ) : (
-          <div className="mt-9 flex w-full flex-wrap justify-center gap-4">
-            {plans.map((plan) => {
-              const featured = !!plan.tag;
-              const isBuying = buyingId === plan.id;
-              return (
-                <div
-                  key={plan.id}
-                  className={`flex w-full max-w-[250px] flex-col gap-3.5 rounded-2xl border p-6 ${
-                    featured ? "border-accent bg-surface" : "border-border bg-bg"
-                  }`}
-                >
-                  <div>
-                    <div className="font-heading text-lg font-semibold">{plan.name}</div>
-                    <div className="mt-1 text-xs text-dim">{plan.credits} credits</div>
-                  </div>
-                  <div>
-                    <span className="font-heading text-3xl font-bold tracking-tight text-accent">
-                      ₹{formatRupees(plan.price)}
-                    </span>
-                    <span className="text-xs text-dim"> {tab === "credits" ? "one-time" : plan.periodLabel}</span>
-                  </div>
-                  <button
-                    onClick={() => handleBuy(plan)}
-                    disabled={!isOwner || buyingId !== null}
-                    className={`rounded-full py-3 text-[13.5px] font-semibold disabled:opacity-50 ${
-                      featured
-                        ? "bg-accent text-accent-ink hover:bg-accent-hover"
-                        : "border border-border-strong hover:border-accent"
-                    }`}
+          // One horizontal row for any number of plans — scrolls sideways once
+          // there are more than fit, and centres while they do fit.
+          <div className="mt-9 w-full overflow-x-auto pb-4 pt-1">
+            <div className="mx-auto flex w-max gap-4">
+              {plans.map((plan) => {
+                const current = isCurrentPlan(plan);
+                const pending = isPendingPlan(plan);
+                const featured = !!plan.tag && !ownsPlan;
+                const isBuying = buyingId === plan.id;
+                return (
+                  <div
+                    key={plan.id}
+                    aria-disabled={!isOwner}
+                    className={`relative flex w-[250px] flex-none flex-col gap-3.5 rounded-2xl border p-6 ${
+                      current
+                        ? "border-border-strong bg-surface-2"
+                        : featured
+                          ? "border-accent bg-surface"
+                          : "border-border bg-bg"
+                    } ${!isOwner ? "cursor-not-allowed opacity-60 grayscale-[40%]" : ""}`}
                   >
-                    {isBuying ? "Opening checkout…" : "Get started"}
-                  </button>
-                  <div className="flex flex-col gap-2 border-t border-border pt-3.5">
-                    <span className="font-mono text-[11px] text-dim">INCLUDES</span>
-                    {plan.info.map((f) => (
-                      <span key={f} className="flex gap-2 text-[12.5px] text-muted">
-                        <Check size={13} className="mt-0.5 flex-none text-accent" />
-                        {f}
+                    {current && (
+                      <span className="flex w-fit items-center gap-1.5 rounded-full border border-border-strong bg-bg px-2.5 py-1 font-mono text-[10px] tracking-wide text-text">
+                        <Check size={11} /> YOUR PLAN
                       </span>
-                    ))}
+                    )}
+                    {pending && (
+                      <span className="flex w-fit items-center gap-1.5 rounded-full border border-[#ff8a6b]/60 bg-bg px-2.5 py-1 font-mono text-[10px] tracking-wide text-[#ff8a6b]">
+                        PAYMENT PENDING
+                      </span>
+                    )}
+                    <div>
+                      <div className="font-heading text-lg font-semibold">{plan.name}</div>
+                      <div className="mt-1 flex items-center gap-1.5 text-xs text-dim">
+                        <CreditIcon size={12} />
+                        {plan.credits} credits
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-heading text-3xl font-bold tracking-tight text-accent">
+                        ₹{formatRupees(plan.price)}
+                      </span>
+                      <span className="text-xs text-dim"> {tab === "credits" ? "one-time" : plan.periodLabel}</span>
+                    </div>
+                    <button
+                      onClick={() => handleBuy(plan)}
+                      disabled={!isOwner || current || buyingId !== null}
+                      title={!isOwner ? "Only the team owner can buy" : current ? "This is your current plan" : undefined}
+                      className={`flex items-center justify-center gap-1.5 rounded-full py-3 text-[13.5px] font-semibold disabled:cursor-not-allowed ${
+                        current
+                          ? "border border-border-strong bg-bg/40 text-muted"
+                          : !isOwner
+                            ? "border border-border text-dim"
+                            : featured
+                              ? "bg-accent text-accent-ink hover:bg-accent-hover disabled:opacity-50"
+                              : "border border-border-strong hover:border-accent disabled:opacity-50"
+                      }`}
+                    >
+                      {current ? (
+                        <>
+                          <Check size={14} /> Current plan
+                        </>
+                      ) : !isOwner ? (
+                        <>
+                          <Lock size={13} /> Owner only
+                        </>
+                      ) : isBuying ? (
+                        "Opening checkout…"
+                      ) : pending ? (
+                        "Retry payment"
+                      ) : (
+                        ownsPlan && tab === "sub" ? "Switch to this plan" : "Get started"
+                      )}
+                    </button>
+                    {current && (
+                      <p className="-mt-1.5 text-center text-[11.5px] text-dim">
+                        Active{renews ? ` · renews ${renews}` : ""}
+                      </p>
+                    )}
+                    <div className="flex flex-col gap-2 border-t border-border pt-3.5">
+                      <span className="font-mono text-[11px] text-dim">INCLUDES</span>
+                      {plan.info.map((f) => (
+                        <span key={f} className="flex gap-2 text-[12.5px] text-muted">
+                          <Check size={13} className="mt-0.5 flex-none text-accent" />
+                          {f}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { CreditIcon } from "@/components/ui/CreditIcon";
 import type { BillingPlan } from "@/lib/types/billing";
 import { formatRupees, periodSuffix, type PricingTab } from "./format";
 
@@ -22,6 +23,14 @@ export function PlanCard({ plan, tab }: { plan: BillingPlan; tab: PricingTab }) 
         <span className="font-heading text-4xl font-bold leading-none tracking-tight">
           ₹{formatRupees(plan.price)}
           <span className="text-sm font-normal text-dim">{periodSuffix(plan, tab)}</span>
+        </span>
+        {/* How many credits the plan gives, straight from the API. */}
+        <span className="credit-amount text-[15px] font-semibold text-text">
+          <CreditIcon size={16} />
+          {plan.credits.toLocaleString("en-US")} credits
+          {tab === "sub" && plan.periodLabel ? (
+            <span className="text-[13px] font-normal text-dim">/{plan.periodLabel}</span>
+          ) : null}
         </span>
         <div className="flex flex-col gap-2">
           {plan.info.map((f) => (
