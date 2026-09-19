@@ -2,9 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { Loader2, AlertTriangle } from "lucide-react";
-import { auth, isFirebaseConfigured } from "@/lib/firebase/client";
+import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/client";
 import { readPendingEmail, clearPendingEmail } from "@/lib/auth/pending-email";
 import { Header } from "@/components/layout/Header";
 
@@ -17,13 +16,15 @@ export default function AuthCallbackPage() {
   const [emailInput, setEmailInput] = useState("");
 
   async function completeSignIn(email: string) {
-    if (!auth) {
+    const authPromise = getFirebaseAuth();
+    if (!authPromise) {
       setStatus("error");
       setError("Sign-in isn't configured yet. Please try again later.");
       return;
     }
     setStatus("working");
     try {
+      const [auth, { signInWithEmailLink }] = await Promise.all([authPromise, import("firebase/auth")]);
       await signInWithEmailLink(auth, email, window.location.href);
       clearPendingEmail();
       router.replace("/studio");
@@ -34,11 +35,13 @@ export default function AuthCallbackPage() {
   }
 
   async function runCallbackFlow() {
-    if (!isFirebaseConfigured || !auth) {
+    const authPromise = getFirebaseAuth();
+    if (!isFirebaseConfigured || !authPromise) {
       setStatus("error");
       setError("Sign-in isn't configured yet. Please try again later.");
       return;
     }
+    const [auth, { isSignInWithEmailLink }] = await Promise.all([authPromise, import("firebase/auth")]);
     if (!isSignInWithEmailLink(auth, window.location.href)) {
       setStatus("error");
       setError("This isn't a valid sign-in link.");

@@ -2,9 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { auth, isFirebaseConfigured } from "@/lib/firebase/client";
+import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/client";
 import { acceptInvite } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/authed-fetch";
 import { Header } from "@/components/layout/Header";
@@ -26,13 +25,18 @@ function AcceptInviteContent() {
       setError("This invite link is missing its token.");
       return;
     }
-    if (!isFirebaseConfigured || !auth) {
+    const authPromise = getFirebaseAuth();
+    if (!isFirebaseConfigured || !authPromise) {
       setStatus("error");
       setError("Sign-in isn't configured yet. Please try again later.");
       return;
     }
 
     try {
+      const [auth, { isSignInWithEmailLink, signInWithEmailLink }] = await Promise.all([
+        authPromise,
+        import("firebase/auth"),
+      ]);
       if (isSignInWithEmailLink(auth, window.location.href)) {
         if (!email) {
           setStatus("error");

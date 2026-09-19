@@ -1,6 +1,8 @@
-import { auth } from "@/lib/firebase/client";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 
 export async function getIdToken(): Promise<string | null> {
-  if (!auth?.currentUser) return null;
-  return auth.currentUser.getIdToken();
+  const authPromise = getFirebaseAuth();
+  if (!authPromise) return null;
+  const auth = await authPromise;
+  return auth.currentUser?.getIdToken() ?? null;
 }

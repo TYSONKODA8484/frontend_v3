@@ -1,5 +1,5 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import type { FirebaseApp } from "firebase/app";
+import type { Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,20 +11,32 @@ const firebaseConfig = {
 };
 
 /**
- * Firebase validates its config eagerly, so until the real
- * NEXT_PUBLIC_FIREBASE_* values are filled in, `auth` stays null and every
- * consumer treats that as "signed out / auth not configured yet" instead of
- * crashing the app.
+ * Pure env check — no firebase import needed, so this stays synchronous and
+ * costs nothing in the initial bundle regardless of which page loads it.
  */
 export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
 
-let firebaseApp: FirebaseApp | null = null;
-let authInstance: Auth | null = null;
+let authPromise: Promise<Auth> | null = null;
 
-if (isFirebaseConfigured) {
-  firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  authInstance = getAuth(firebaseApp);
+/**
+ * The firebase SDK (~144KB across its app+auth chunks) used to load
+ * synchronously on every page via AuthContext in the root layout —
+ * including the signed-out marketing homepage, which most visitors never
+ * need it on. Deferred behind a dynamic import so those bytes only
+ * download once this is actually called (from AuthContext's effect, after
+ * first paint), not as part of the page's initial JS. Memoized so every
+ * consumer (AuthContext, google-sign-in, the callback/invite pages) shares
+ * one in-flight/resolved instance instead of re-importing.
+ */
+export function getFirebaseAuth(): Promise<Auth> | null {
+  if (!isFirebaseConfigured) return null;
+  if (!authPromise) {
+    authPromise = Promise.all([import("firebase/app"), import("firebase/auth")]).then(
+      ([{ initializeApp, getApps, getApp }, { getAuth }]) => {
+        const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        return getAuth(app);
+      },
+    );
+  }
+  return authPromise;
 }
-
-export { firebaseApp };
-export const auth = authInstance;
