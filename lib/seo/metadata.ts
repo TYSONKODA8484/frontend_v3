@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { siteConfig } from "@/lib/config/site";
 
 const description =
-  "ShootPX turns one product photo into studio-quality photoshoots with simple pay-as-you-go credits. Built for Shopify, Amazon and Etsy sellers, DTC brands and catalog teams. No studio, no shoot day. Product video and UGC ads coming soon.";
+  "ShootPX turns one product photo into studio-style images with AI. Listing photoshoots, creative scenes, recolor and model shoots for e-commerce sellers, paid with credits.";
 
 export const siteMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -13,12 +13,10 @@ export const siteMetadata: Metadata = {
   keywords: [
     "AI product photography",
     "product photoshoot generator",
-    "AI UGC ads",
-    "product video generator",
     "ecommerce product images",
     "Shopify product photos",
-    "background remover",
-    "AI mockups",
+    "product recolor",
+    "AI model shoot",
   ],
   robots: "index, follow, max-image-preview:large",
   // No root-level canonical: it would be inherited by every page. Public pages
@@ -28,14 +26,14 @@ export const siteMetadata: Metadata = {
     siteName: siteConfig.name,
     title: siteConfig.name,
     description:
-      "One product photo becomes studio-quality stills, pay-as-you-go with credits. Motion clips and UGC ads coming soon.",
+      "Turn one product photo into studio-style images: listing photoshoots, creative scenes, recolor and model shoots.",
     url: `${siteConfig.url}/`,
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
     description:
-      "Turn one product photo into studio stills, product videos and UGC-style ads. Built for e-commerce sellers.",
+      "Turn one product photo into studio-style images: listing photoshoots, creative scenes, recolor and model shoots.",
   },
   // Search Console / Bing verification tokens — set in the environment.
   verification: {

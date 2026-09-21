@@ -1,17 +1,17 @@
 export const audiences = [
   {
     title: "Solo e-commerce sellers",
-    desc: "You shoot on a phone at the kitchen table. ShootPX gets you a listing-quality image before your coffee cools.",
-    wins: ["Mobile-friendly, no learning curve", "Marketplace presets built in", "Free tier to start"],
+    desc: "You shoot on a phone at the kitchen table. ShootPX turns that photo into a listing-quality image.",
+    wins: ["Listing Photoshoot for marketplace-style images", "Recolor for product colour variants", "Free credits on signup"],
   },
   {
     title: "DTC brand marketers",
-    desc: "On-brand lifestyle imagery and UGC ads for paid social, with a shared brand kit injected into every prompt.",
-    wins: ["Brand kit drives scene colour and type", "Batch variants for creative testing", "Commercial licence from Pro"],
+    desc: "On-brand lifestyle imagery for paid social and your store, from the same product photo.",
+    wins: ["Creative Photoshoot for lifestyle scenes", "Model Shoot for products on AI models", "Commercial licence included"],
   },
   {
     title: "Catalog & ops teams",
-    desc: "Hundreds of SKUs, one consistent look. Import a folder, apply a preset, review and ship.",
-    wins: ["250 products per batch job", "Per-image overrides preserved", "CSV manifests for handoff"],
+    desc: "Consistent product imagery across your catalog, one product at a time today.",
+    wins: ["Listing Photoshoot for consistent images", "Batch Studio: coming soon"],
   },
 ];

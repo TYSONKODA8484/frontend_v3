@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { SIGNUP_CREDITS, SIGNUP_CREDITS_NOTE } from "@/lib/config/site";
 
 export function CtaSignup() {
   const [email, setEmail] = useState("");
@@ -37,10 +38,12 @@ export function CtaSignup() {
         <h2 className="max-w-[20ch] font-heading text-[clamp(32px,4.4vw,56px)] font-bold leading-[1.03] tracking-tight">
           Your next shoot starts with one photo.
         </h2>
-        <p className="max-w-[50ch] text-base leading-relaxed text-muted">
-          Buy credits, spend them on the generations you use. No subscription, no studio, no
-          waiting on a retoucher.
-        </p>
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-mono text-[12px] tracking-wide text-muted">
+            {SIGNUP_CREDITS} FREE CREDITS ON SIGNUP*
+          </span>
+          <span className="text-[11px] text-dim">*{SIGNUP_CREDITS_NOTE}</span>
+        </div>
 
         {signedUp ? (
           <div className="flex items-center gap-2 rounded-full border border-accent px-6 py-3 font-mono text-[13px] text-accent">
@@ -64,7 +67,7 @@ export function CtaSignup() {
               disabled={sending}
               className="whitespace-nowrap rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
             >
-              {sending ? "Sending…" : "Get started"}
+              {sending ? "Sending…" : "Join the list"}
             </button>
           </div>
         )}

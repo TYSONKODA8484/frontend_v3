@@ -69,7 +69,7 @@ export function BillingTab() {
 
       <div className="border border-border p-5">
         <div className="font-mono text-[10.5px] tracking-wide text-dim">CURRENT PLAN</div>
-        {billing.plan ? (
+        {billing.plan && subActive ? (
           <div className="mt-2.5 flex items-center justify-between">
             <div>
               <div className="font-heading text-[22px] font-bold">{billing.plan}</div>
@@ -78,14 +78,8 @@ export function BillingTab() {
                   {currentPlan.credits.toLocaleString()} credits/{currentPlan.periodLabel}
                 </div>
               )}
-              {subActive ? (
-                <div className="mt-0.5 text-[12.5px] text-dim capitalize">Status: {billing.subscriptionStatus}</div>
-              ) : (
-                <div className="mt-1.5 max-w-[46ch] text-[12.5px] leading-relaxed text-[#ff8a6b]">
-                  Payment not completed. This subscription isn&apos;t active yet — finish paying, or pick a plan again.
-                </div>
-              )}
-              {subActive && billing.currentPeriodEnd && (
+              <div className="mt-0.5 text-[12.5px] text-dim capitalize">Status: {billing.subscriptionStatus}</div>
+              {billing.currentPeriodEnd && (
                 <div className="mt-0.5 text-[12.5px] text-dim">
                   Renews {formatDate(billing.currentPeriodEnd)}
                 </div>
@@ -97,7 +91,7 @@ export function BillingTab() {
                   onClick={() => openBuyModal("sub")}
                   className="whitespace-nowrap rounded-full border border-border-strong px-5 py-2.5 text-[13.5px] font-medium hover:border-accent"
                 >
-                  {subActive ? "Manage subscription" : "Complete payment"}
+                  Manage subscription
                 </button>
                 <button
                   onClick={() => setConfirmCancel(true)}

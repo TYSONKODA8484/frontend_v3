@@ -23,10 +23,13 @@ const activeSocial = Object.fromEntries(
   Object.entries(socialUrls).filter(([, url]) => url.trim() !== ""),
 ) as Partial<Record<SocialPlatform, string>>;
 
+/** New-account welcome credits. A temporary launch offer — change it here only. */
+export const SIGNUP_CREDITS = 5;
+export const SIGNUP_CREDITS_NOTE = "Launch offer. May change or end without notice.";
+
 export const siteConfig = {
   name: "ShootPX",
   url: "https://shootpx.com",
-  contactEmail: "hello@shootpx.com",
   supportEmail: "shootpxlabs@gmail.com",
   social: activeSocial,
 };

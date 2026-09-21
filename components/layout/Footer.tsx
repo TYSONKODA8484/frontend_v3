@@ -12,12 +12,12 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-5 pb-6 pt-14">
         <div className="grid grid-cols-1 gap-8 pb-11 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
           <div className="flex flex-col gap-4">
-            <Link href="#top">
+            <Link href="/#top">
               <Logo size={26} textClassName="text-[17px]" />
             </Link>
             <p className="max-w-[34ch] text-[13px] leading-relaxed text-dim">
-              AI product photoshoots, product videos and UGC ads for e-commerce. One upload, every
-              asset your listing needs.
+              AI product photoshoots for e-commerce. Upload one product photo and generate studio-style
+              images.
             </p>
             <div className="flex gap-2.5">
               {activeSocials.map(([platform, href]) => {
@@ -46,7 +46,7 @@ export function Footer() {
                 </Link>
               ))}
               {col.title === "COMPANY" && (
-                <a href={`mailto:${siteConfig.contactEmail}`} className="text-[13px] text-muted">
+                <a href={`mailto:${siteConfig.supportEmail}`} className="text-[13px] text-muted">
                   Contact
                 </a>
               )}

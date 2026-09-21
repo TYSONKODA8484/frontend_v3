@@ -2,11 +2,11 @@ export const pillars = [
   {
     tag: "IMAGES",
     title: "Studio photoshoots without the studio",
-    desc: "Drop a phone photo, pick a scene, and get four finished variations. Precise mode keeps your product pixel-locked so logos and labels stay exactly right.",
+    desc: "Drop a phone photo, pick a tool and a scene, and generate finished product images.",
     bullets: [
-      "Background removal and scene generation in one pass",
-      "Precise and Creative modes for control versus expression",
-      "Marketplace export presets for Shopify, Amazon and Etsy",
+      "Listing and Creative photoshoots from a single product photo",
+      "Recolor to create product colour variants",
+      "Model Shoot to show products on AI-generated models",
     ],
     placeholder: "Photoshoot editor / result grid",
     image: "/home/shoot.webp",
@@ -32,7 +32,7 @@ export const pillars = [
     title: "Creator-style ads, no creator sourcing",
     desc: "Paste a product URL, pick an AI actor, drop in a script — or let ShootPX write one. Generate one ad or five variants for creative testing. In development, launching soon.",
     bullets: [
-      "1,200+ AI actors with gender, age and style filters",
+      "AI actors with gender, age and style filters",
       "Voice and language selection with lip-synced delivery",
       "One script across five actors for fast A/B testing",
     ],

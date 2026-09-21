@@ -36,7 +36,7 @@ export const comingSoonTools: Tool[] = [
   soon("product_motion", "Product Motion", "Still to clip, camera presets", "clapperboard", "video", 1),
   soon("effect_templates", "Effect Templates", "Pour, unbox, reveal, hold", "wand", "video", 2),
   soon("ugc_avatar_ads", "UGC Avatar Ads", "Script, actor, voice, captions", "user", "video", 3),
-  soon("batch_studio", "Batch Studio", "One preset across 250 assets", "layers", "scale", 1),
+  soon("batch_studio", "Batch Studio", "One preset across many assets", "layers", "scale", 1),
   soon("brand_kit", "Brand Kit", "Marks, palette, type, scenes", "palette", "scale", 2),
   soon("library", "Library", "Projects, folders, version history", "folder", "scale", 3),
 ];

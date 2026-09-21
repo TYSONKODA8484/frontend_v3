@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { BillingResponse } from "@/lib/types/billing";
 import { PlanCard } from "./PlanCard";
 import type { PricingTab } from "./format";
+import { SIGNUP_CREDITS, SIGNUP_CREDITS_NOTE } from "@/lib/config/site";
 
 export function Pricing({ billing }: { billing: BillingResponse }) {
   const [tab, setTab] = useState<PricingTab>("sub");
@@ -17,12 +18,16 @@ export function Pricing({ billing }: { billing: BillingResponse }) {
         <div className="mx-auto mb-10 max-w-[54ch] text-center">
           <span className="font-mono text-[11px] tracking-widest text-accent-dim">PRICING</span>
           <h2 className="mt-3 font-heading text-[clamp(28px,3.2vw,40px)] font-semibold tracking-tight">
-            Simple, pay-as-you-go credits.
+            Simple, credit-based pricing.
           </h2>
           <p className="mt-3 text-[14.5px] leading-relaxed text-muted">
             Buy credits when you need them, or subscribe for a steady monthly supply. Commercial
             licence included on every plan.
           </p>
+          <p className="mt-3 font-mono text-[11px] tracking-wide text-muted">
+            {SIGNUP_CREDITS} FREE CREDITS ON SIGNUP*
+          </p>
+          <p className="mt-1 text-[11px] text-dim">*{SIGNUP_CREDITS_NOTE}</p>
         </div>
 
         <div className="mb-8 flex justify-center">

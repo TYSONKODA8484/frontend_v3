@@ -1,4 +1,5 @@
 import { SlotImage } from "@/components/ui/SlotImage";
+import { SIGNUP_CREDITS, SIGNUP_CREDITS_NOTE } from "@/lib/config/site";
 
 export function Hero() {
   return (
@@ -6,21 +7,13 @@ export function Hero() {
       <div className="animate-glow pointer-events-none absolute left-1/2 top-[-220px] h-[520px] w-[1000px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(200,255,0,0.16),transparent)]" />
 
       <div className="relative mx-auto flex max-w-4xl flex-col items-center gap-6">
-        <div className="flex items-center gap-2 rounded-full border border-border-strong px-4 py-1.5">
-          <span className="animate-blink h-1.5 w-1.5 rounded-full bg-accent" />
-          <span className="font-mono text-[11px] tracking-widest text-muted">
-            TRUSTED BY 3,200+ E-COMMERCE SELLERS
-          </span>
-        </div>
-
         <h1 className="max-w-[17ch] text-center font-heading text-[clamp(42px,7.4vw,92px)] font-bold leading-[0.97] tracking-[-0.035em]">
           Product content that <span className="text-accent">actually sells.</span>
         </h1>
 
         <p className="max-w-[58ch] text-center text-lg leading-relaxed text-muted">
-          ShootPX turns one product photo into studio quality photoshoots, scroll-stopping product
-          videos and AI UGC ads. No studio, no camera crew, no shoot day — from a single upload to
-          marketplace ready in minutes.
+          ShootPX turns one product photo into studio quality photoshoots. No studio, no camera crew,
+          no shoot day — upload a single photo and generate studio-style product images.
         </p>
 
         <div className="flex flex-wrap justify-center gap-3">
@@ -38,7 +31,12 @@ export function Hero() {
           </a>
         </div>
 
-        <span className="font-mono text-[11px] tracking-wide text-dim">PAY AS YOU GO</span>
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-mono text-[11px] tracking-wide text-muted">
+            {SIGNUP_CREDITS} FREE CREDITS ON SIGNUP*
+          </span>
+          <span className="text-[11px] text-dim">*{SIGNUP_CREDITS_NOTE}</span>
+        </div>
 
         <div className="relative mt-3.5 aspect-video w-full overflow-hidden rounded-2xl border border-border-strong bg-surface">
           <SlotImage

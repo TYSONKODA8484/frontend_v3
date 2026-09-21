@@ -8,12 +8,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/sections/Hero";
 import { TrustMarquee } from "@/components/sections/TrustMarquee";
-import { Outcomes } from "@/components/sections/Outcomes";
 import { Platform } from "@/components/sections/Platform";
 import { Toolkit } from "@/components/sections/Toolkit/Toolkit";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { UseCases } from "@/components/sections/UseCases";
-import { Testimonials } from "@/components/sections/Testimonials";
 import { Pricing } from "@/components/sections/Pricing/Pricing";
 import { Faq } from "@/components/sections/Faq";
 import { CtaSignup } from "@/components/sections/CtaSignup";
@@ -31,13 +29,11 @@ export default async function Home() {
       <main>
         <Hero />
         <TrustMarquee />
-        <Outcomes />
         <Platform />
         {/* Landing shows live tools plus the SOON teasers; the studio lists live only. */}
         <Toolkit tools={withComingSoon(tools.tools)} />
         <HowItWorks />
         <UseCases />
-        <Testimonials />
         <Pricing billing={billing} />
         <Faq />
         <CtaSignup />

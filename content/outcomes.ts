@@ -1,6 +1,3 @@
-export const outcomes = [
-  { value: "18s", label: "Median time from upload to first finished image" },
-  { value: "99%", label: "Lower cost per image than a booked studio shoot" },
-  { value: "250", label: "Products per batch job with one consistent preset" },
-  { value: "312", label: "Scene, motion and ad templates ready to use" },
-];
+// Unverified launch stats were removed; the Outcomes section is not rendered.
+// Add real, measured figures here before re-adding <Outcomes /> to app/page.tsx.
+export const outcomes: { value: string; label: string }[] = [];

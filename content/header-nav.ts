@@ -16,18 +16,18 @@ export const navItems: NavItem[] = [
   {
     id: "platform",
     label: "Platform",
-    href: "#platform",
+    href: "/#platform",
     items: [
-      { name: "AI Photoshoot", desc: "Stage products on a canvas and generate scenes", href: "#platform" },
-      { name: "Product Motion", desc: "Still to video clip", href: "#platform", badge: "SOON" },
-      { name: "UGC Avatar Ads", desc: "Script plus AI actor", href: "#platform", badge: "SOON" },
-      { name: "Batch Studio", desc: "One preset across 250 products", href: "#tools", badge: "SOON" },
+      { name: "AI Photoshoot", desc: "Stage products on a canvas and generate scenes", href: "/#platform" },
+      { name: "Product Motion", desc: "Still to video clip", href: "/#platform", badge: "SOON" },
+      { name: "UGC Avatar Ads", desc: "Script plus AI actor", href: "/#platform", badge: "SOON" },
+      { name: "Batch Studio", desc: "One preset across many products", href: "/#tools", badge: "SOON" },
     ],
   },
   {
     id: "tools",
     label: "Tools",
-    href: "#tools",
+    href: "/#tools",
     items: [
       { name: "Product Listing", desc: "Create professional product listing images", href: "/#tools" },
       { name: "Creative", desc: "Turn product photos into creative visuals", href: "/#tools" },
@@ -38,22 +38,21 @@ export const navItems: NavItem[] = [
   {
     id: "usecases",
     label: "Use cases",
-    href: "#usecases",
+    href: "/#usecases",
     items: [
-      { name: "Solo sellers", desc: "Marketplace-ready photos in minutes", href: "#usecases" },
-      { name: "DTC brands", desc: "On-brand lifestyle imagery and paid social ads", href: "#usecases" },
-      { name: "Catalog teams", desc: "Consistent output across hundreds of SKUs", href: "#usecases" },
+      { name: "Solo sellers", desc: "Listing-style photos from a phone photo", href: "/#usecases" },
+      { name: "DTC brands", desc: "On-brand lifestyle imagery for paid social and your store", href: "/#usecases" },
+      { name: "Catalog teams", desc: "Consistent product imagery across your catalog", href: "/#usecases" },
     ],
   },
-  { id: "pricing", label: "Pricing", href: "#pricing", items: null },
+  { id: "pricing", label: "Pricing", href: "/#pricing", items: null },
   {
     id: "resources",
     label: "Resources",
-    href: "#faq",
+    href: "/#faq",
     items: [
-      { name: "FAQ", desc: "Common questions about output and licensing", href: "#faq" },
-      { name: "How it works", desc: "The four-step production flow", href: "#how" },
-      { name: "Template library", desc: "312 scene, motion and ad presets", href: "#tools" },
+      { name: "FAQ", desc: "Common questions about output and licensing", href: "/#faq" },
+      { name: "How it works", desc: "The four-step production flow", href: "/#how" },
     ],
   },
 ];

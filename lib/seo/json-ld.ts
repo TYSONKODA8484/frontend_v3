@@ -11,7 +11,7 @@ export function buildJsonLd() {
         name: siteConfig.name,
         url: `${siteConfig.url}/`,
         description:
-          "AI product photography, product video and UGC ad generation platform for e-commerce sellers.",
+          "AI product photography platform for e-commerce sellers.",
         sameAs: Object.values(siteConfig.social),
       },
       {
@@ -27,11 +27,7 @@ export function buildJsonLd() {
         applicationCategory: "DesignApplication",
         operatingSystem: "Web browser",
         description:
-          "Turn one product photo into studio photoshoots, product motion videos and AI UGC ads for Shopify, Amazon and Etsy sellers.",
-        offers: [
-          { "@type": "Offer", name: "Starter credits", price: "1000", priceCurrency: "INR" },
-          { "@type": "Offer", name: "Popular credits", price: "2500", priceCurrency: "INR" },
-        ],
+          "Turn one product photo into studio-style images: listing photoshoots, creative scenes, recolor and model shoots for e-commerce sellers.",
       },
       {
         "@type": "FAQPage",

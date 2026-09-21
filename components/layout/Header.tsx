@@ -41,7 +41,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-5 px-5 py-3.5">
-        <Link href="#top" className="flex-none">
+        <Link href="/#top" className="flex-none">
           <Logo />
         </Link>
 
@@ -108,7 +108,7 @@ export function Header() {
 
         <div className="ml-auto flex flex-none items-center gap-3.5">
           <Link
-            href="#start"
+            href="/#start"
             className="hidden whitespace-nowrap font-mono text-[11.5px] tracking-wide text-muted sm:inline"
           >
             BOOK DEMO

@@ -78,11 +78,10 @@ export function BuyCreditsModal() {
   const currentKey = teamBilling?.plan?.toLowerCase();
   const matchesTeamPlan = (p: BillingPlan) =>
     tab === "sub" && !!currentKey && (p.slug.toLowerCase() === currentKey || p.name.toLowerCase() === currentKey);
-  // A subscription that was started but never paid (checkout closed) has a
-  // plan on the team but is not "active" — it must not look like a plan they own.
+  // A subscription that was started but never paid (checkout closed) is not
+  // "active" — it is treated as no subscription at all.
   const subActive = teamBilling?.subscriptionStatus?.toLowerCase() === "active";
   const isCurrentPlan = (p: BillingPlan) => matchesTeamPlan(p) && subActive;
-  const isPendingPlan = (p: BillingPlan) => matchesTeamPlan(p) && !subActive;
 
   const plans = (tab === "sub" ? billing.subscriptions : billing.credits)
     .slice()
@@ -199,7 +198,6 @@ export function BuyCreditsModal() {
             <div className="mx-auto flex w-max gap-4">
               {plans.map((plan) => {
                 const current = isCurrentPlan(plan);
-                const pending = isPendingPlan(plan);
                 const featured = !!plan.tag && !ownsPlan;
                 const isBuying = buyingId === plan.id;
                 return (
@@ -217,11 +215,6 @@ export function BuyCreditsModal() {
                     {current && (
                       <span className="flex w-fit items-center gap-1.5 rounded-full border border-border-strong bg-bg px-2.5 py-1 font-mono text-[10px] tracking-wide text-text">
                         <Check size={11} /> YOUR PLAN
-                      </span>
-                    )}
-                    {pending && (
-                      <span className="flex w-fit items-center gap-1.5 rounded-full border border-[#ff8a6b]/60 bg-bg px-2.5 py-1 font-mono text-[10px] tracking-wide text-[#ff8a6b]">
-                        PAYMENT PENDING
                       </span>
                     )}
                     <div>
@@ -261,8 +254,6 @@ export function BuyCreditsModal() {
                         </>
                       ) : isBuying ? (
                         "Opening checkout…"
-                      ) : pending ? (
-                        "Retry payment"
                       ) : (
                         ownsPlan && tab === "sub" ? "Switch to this plan" : "Get started"
                       )}
